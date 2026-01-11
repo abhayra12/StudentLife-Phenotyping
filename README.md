@@ -10,7 +10,7 @@ This project develops a machine learning system for digital phenotyping using pa
 - 49 participants (undergraduate and graduate students) - verified via data analysis
 - ~10 weeks of continuous sensing data (Spring 2013)
 - 10 sensor types: activity, audio, bluetooth, conversation, dark, gps, phonecharge, phonelock, wifi, wifi_location
-- Total size: 2.39 GB (490 CSV files)
+- 490 CSV files
 - Focus: Passive behavioral sensing only
 
 ## Objectives
