@@ -7,9 +7,10 @@ This project develops a machine learning system for digital phenotyping using pa
 **Important**: This project uses ONLY sensing data (passive smartphone sensors), excluding self-reported surveys, EMA responses, and academic records.
 
 **Dataset**: [StudentLife Dataset - Sensing Folder Only](https://studentlife.cs.dartmouth.edu/dataset.html)
-- 48 participants (undergraduate and graduate students)
-- 10 weeks of continuous sensing data (Spring 2013)
+- 49 participants (undergraduate and graduate students) - verified via data analysis
+- ~10 weeks of continuous sensing data (Spring 2013)
 - 10 sensor types: activity, audio, bluetooth, conversation, dark, gps, phonecharge, phonelock, wifi, wifi_location
+- Total size: 2.39 GB (490 CSV files)
 - Focus: Passive behavioral sensing only
 
 ## Objectives
