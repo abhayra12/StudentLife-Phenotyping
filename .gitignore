@@ -15,7 +15,7 @@ CURRENT_TASK.md
 # requirements.txt is now replaced by pyproject.toml + uv.lock
 
 # Data (too large for git)
-data/
+/data/
 *.csv
 *.json
 *.tar.bz2
