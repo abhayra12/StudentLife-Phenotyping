@@ -537,9 +537,9 @@ uv sync  # Installs from uv.lock
 
 ## 🎯 Current Focus
 
-**Current Task**: Task 1.3 - Download and Organize Sensing Data  
-**Next Task**: Task 2.1 - Sensing Data EDA  
-**Status**: 🔄 **REPLANNING COMPLETE** - Ready to extract sensing data
+**Current Task**: Task 3.2 - Time Alignment  
+**Next Task**: Task 4.1 - Feature Engineering  
+**Status**: 🔄 **PHASE 3 IN PROGRESS** - Data Engineering
 
 **Major Change** (2026-01-11 22:15):
 - 🔄 **Scope changed to sensing-only data** (10 sensor types)
@@ -548,6 +548,10 @@ uv sync  # Installs from uv.lock
 - 🔄 Focus: Behavioral clustering, anomaly detection, pattern analysis
 
 **Recent Accomplishments** (2026-01-11):
+- ✅ **Phase 2 COMPLETE**: Data Acquisition & EDA (Tasks 2.1-2.4)
+- ✅ Verified dataset: 49 participants, ~10 weeks, 10 sensors
+- ✅ Created comprehensive EDA notebooks (Sensor Deep Dive, Quality, Term Lifecycle)
+- ✅ **Task 3.1 COMPLETE**: Built data cleaning pipeline & unit tests
 - ✅ Added upstream remote repository to git
 - ✅ Force-pushed local code to upstream (preserving local .gitignore and README)
 - ✅ Configured git to exclude private config files (.agents.md, .rules.md, etc.)
