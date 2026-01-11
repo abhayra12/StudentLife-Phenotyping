@@ -7,6 +7,7 @@ plan.md
 .preferences.md
 .commands.md
 WHILE_DOWNLOADING.md
+CURRENT_TASK.md
 
 # Legacy requirements (keeping for reference)
 # requirements.txt is now replaced by pyproject.toml + uv.lock

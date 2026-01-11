@@ -232,6 +232,22 @@ _(To be added)_
 **Rationale**: Learning plan is personal/instructional and not part of production code  
 **Alternative**: Track it (rejected - adds noise to repository)
 
+### Decision 3: Git Upstream and File Tracking Configuration
+**Date**: 2026-01-11  
+**Context**: Need to push to GitHub and manage private configuration files  
+**Decision**: 
+- Add upstream remote: https://github.com/abhayra12/StudentLife-Phenotyping.git
+- Exclude from tracking: `.agents.md`, `.rules.md`, `.preferences.md`, `.commands.md`, `WHILE_DOWNLOADING.md`, `CURRENT_TASK.md`
+- Use force-push with `--force-with-lease` to preserve local files over upstream conflicts
+
+**Rationale**: 
+- Private config files contain personal workflow preferences and should not be in public repo
+- Local .gitignore and README should take precedence over upstream defaults
+- `--force-with-lease` is safer than `--force` as it checks for unexpected changes
+
+**Alternative Considered**: Manual conflict resolution (rejected - more error-prone for simple preference to keep local files)
+
+
 ---
 
 ## 🛠️ Technical Setup
@@ -500,25 +516,43 @@ uv sync  # Installs from uv.lock
 
 ## 🎯 Current Focus
 
-**Current Task**: ✅ Task 1.1 Complete! Ready for Task 1.2  
-**Next Task**: Task 1.2 - Setup Development Environment  
-**Status**: 🎉 **TASK 1.1 COMPLETED**
+**Current Task**: Task 1.3 - Download and Organize Dataset  
+**Next Task**: Task 2.1 - Exploratory Data Analysis  
+**Status**: 🔄 **TASK 1.3 IN PROGRESS** (Dataset downloading)
 
-**What Was Accomplished**:
+**Recent Accomplishments** (2026-01-11):
+- ✅ Added upstream remote repository to git
+- ✅ Force-pushed local code to upstream (preserving local .gitignore and README)
+- ✅ Configured git to exclude private config files (.agents.md, .rules.md, etc.)
+- ✅ Removed CURRENT_TASK.md from git tracking (added to .gitignore)
+- ✅ Prepared comprehensive project overview for mentor call
+
+**What Was Previously Accomplished**:
 - ✅ Modern uv workflow with pyproject.toml + uv.lock
 - ✅ Complete directory structure created
 - ✅ Comprehensive README.md
 - ✅ All packages verified working
 - ✅ First git commit made (eb269c0)
+- ✅ Pushed to upstream: https://github.com/abhayra12/StudentLife-Phenotyping.git
+
+**Current Work**:
+- 🔄 Downloading StudentLife dataset (53 GB)
+- 📝 Researched dataset structure and features from paper
 
 **Next Steps**:
-1. Get Task 1.2 assignment from instructor
-2. Continue with Phase 1: Project Setup & Environment
+1. Complete dataset download and extraction
+2. Run dataset verification and create manifest
+3. Begin exploratory data analysis (EDA)
+4. Mentor call to discuss data strategy and modeling approach
 
-**Blockers**: None  
-**Questions**: None
+**Blockers**: None (dataset download in progress)  
+**Questions for Mentor**: 
+- Should we start with a subset of participants or process all 48?
+- Baseline replication vs direct modern approach?
+- Train/test split strategy for time-series data?
 
-**Achievement Unlocked**: 🏆 Professional ML project structure with modern tooling!
+**Achievement Unlocked**: 🏆 Professional ML project with proper git workflow and upstream repository!
+
 
 ---
 
