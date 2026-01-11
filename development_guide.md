@@ -134,11 +134,61 @@ python -m uv pip check  # Validates venv packages
 
 Tasks are added here when completed. Each entry includes date, what was done, challenges faced, and lessons learned.
 
-### Task 1.1: Initialize Project Structure (In Progress)
+### Task 1.1: Initialize Project Structure ✅
 **Started**: 2026-01-11  
-**Status**: 🔄 In Progress
+**Completed**: 2026-01-11  
+**Duration**: ~2-3 hours  
+**Status**: ✅ Complete
 
-**Completed So Far**:
+**What Was Accomplished**:
+1. ✅ Virtual Environment Setup
+   - Installed uv: `pip install uv`
+   - Created venv with `python -m uv venv`
+   - Fixed Windows PowerShell execution policy
+
+2. ✅ Migrated to Modern UV Workflow
+   - Initialized: `python -m uv init --no-readme --no-pin-python`
+   - Created `pyproject.toml` (follows PEP 621)
+   - Added 26 production dependencies
+   - Added 4 dev dependencies (--dev flag)
+   - Generated `uv.lock` (377KB) for reproducibility
+
+3. ✅ Created Project Directory Structure
+   - Data subdirectories: raw, processed, features, external
+   - Notebook organization: 01-05 phases
+   - Source modules: data, features, models, visualization, utils
+   - Model storage: saved_models, checkpoints
+
+4. ✅ Documentation
+   - Created comprehensive README.md
+   - Updated development_guide.md throughout
+   - Created CURRENT_TASK.md for active task tracking
+
+5. ✅ First Git Commit
+   - Configured .gitignore properly
+   - Made initial commit with conventional commit format
+   - Commit hash: `eb269c0`
+
+**Challenges Faced**:
+- **uv PATH Issue**: `uv` command not recognized → Solution: Use `python -m uv`
+- **PowerShell Execution Policy**: Scripts blocked → Solution: `Set-ExecutionPolicy RemoteSigned`
+- **uv in venv**: Global uv didn't target venv → Solution: Install uv inside venv with pip
+
+**Lessons Learned**:
+- Modern Python projects use `pyproject.toml` + `uv.lock` (not just requirements.txt)
+- `uv` is 10-100x faster and ensures reproducibility via lock file
+- Windows requires `python -m uv` due to PATH issues
+- Separating dev dependencies (--dev) is important for production
+- Following industry standards (ML Zoomcamp workshop) from day one
+
+**Key Files Created**:
+- `pyproject.toml` (598 bytes) → Modern dependencies
+- `uv.lock` (377KB) → Locked versions
+- `README.md` → Project documentation  
+- `.gitignore` → Proper exclusions
+- Complete directory structure
+
+---
 
 ## 🏗️ Project Structure
 
@@ -450,24 +500,25 @@ uv sync  # Installs from uv.lock
 
 ## 🎯 Current Focus
 
-**Current Task**: Task 1.1 - Initialize Project Structure  
-**Current Subtask**: Finalize modern uv workflow migration and create README.md  
-**Progress**:
-- ✅ Virtual environment created with uv
-- ✅ Migrated to modern uv workflow
-  - ✅ Created `pyproject.toml` (replaces requirements.txt)
-  - ✅ Running `uv add` for all dependencies (in progress)
-  - ✅ Creating `uv.lock` for reproducibility
-- ✅ Updated all documentation (CURRENT_TASK, development_guide, SETUP_GUIDE)
-- 🔄 Waiting for torch download to complete (~15MB/105MB)
-- 🔄 Next: Create project directory structure
-- 🔄 Next: Create README.md
-- 🔄 Next: First Git commit
+**Current Task**: ✅ Task 1.1 Complete! Ready for Task 1.2  
+**Next Task**: Task 1.2 - Setup Development Environment  
+**Status**: 🎉 **TASK 1.1 COMPLETED**
 
-**Blockers**: None (torch downloading in background)  
+**What Was Accomplished**:
+- ✅ Modern uv workflow with pyproject.toml + uv.lock
+- ✅ Complete directory structure created
+- ✅ Comprehensive README.md
+- ✅ All packages verified working
+- ✅ First git commit made (eb269c0)
+
+**Next Steps**:
+1. Get Task 1.2 assignment from instructor
+2. Continue with Phase 1: Project Setup & Environment
+
+**Blockers**: None  
 **Questions**: None
 
-**Key Achievement**: Successfully migrated to modern Python packaging standards with `pyproject.toml` + `uv.lock`!
+**Achievement Unlocked**: 🏆 Professional ML project structure with modern tooling!
 
 ---
 

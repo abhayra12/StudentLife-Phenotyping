@@ -1,6 +1,6 @@
-# 📋 CURRENT TASK: Task 1.1 - Initialize Project Structure
+# 📋 CURRENT TASK: Task 1.3 - Download and Organize Dataset
 
-**Status**: 🔄 **IN PROGRESS**  
+**Status**: 🔄 **READY TO START**  
 **Assigned Date**: 2026-01-11  
 **Phase**: PHASE 1 - PROJECT SETUP & ENVIRONMENT
 
@@ -8,294 +8,326 @@
 
 ## 🎯 Task Overview
 
-**Objective**: Set up a professional ML project structure with modern uv-based dependency management, proper organization, and initial documentation.
+**Objective**: Download the StudentLife dataset, organize it properly in the project structure, and create documentation for data organization.
 
-**Why This Matters**: Proper project organization from day one is crucial for maintainability, reproducibility, and collaboration. This is how production ML teams structure their projects.
+**Why This Matters**: Understanding data organization is the first step in any ML project. Proper data management ensures reproducibility and makes it easier to work with the dataset.
 
-**Estimated Time**: 2-3 hours
-
----
-
-## ✅ Completed Steps
-
-### Step 1: Create Virtual Environment with `uv` ✅
-- Installed uv: `pip install uv`
-- Created venv: `python -m uv venv`
-- Activated: `.venv\Scripts\activate`
-- Fixed PowerShell execution policy
-
-### Step 2: Migrate to Modern UV Workflow ✅
-- Initialized uv project: `python -m uv init --no-readme --no-pin-python`
-- Created `pyproject.toml` (modern Python packaging)
-- Added production dependencies: `python -m uv add pandas numpy scipy matplotlib seaborn plotly scikit-learn xgboost lightgbm catboost torch statsmodels tqdm joblib pyyaml python-dotenv fastapi uvicorn pydantic optuna`
-- Added dev dependencies: `python -m uv add --dev jupyter pytest pytest-cov ipykernel`
-- Created `uv.lock` for reproducibility
+**Estimated Time**: 1-2 hours (mostly download time)
 
 ---
 
-## 🔄 Remaining Steps
+## ✅ Prerequisites
 
-### Step 3: Create Project Directory Structure
+Before starting this task, ensure:
+- ✅ Task 1.1 complete (project structure created)
+- ✅ Task 1.2 complete (development environment setup - already done in 1.1)
+- ✅ Virtual environment activated
+- ✅ Git repository initialized
 
-Create the following directory structure using PowerShell:
+**Note**: We already completed Task 1.2 as part of Task 1.1! All dependencies are installed via `pyproject.toml` + `uv.lock`.
+
+---
+
+## 📋 Task Steps
+
+### Step 1: Download Student Life Dataset
+
+**Dataset URL**: https://studentlife.cs.dartmouth.edu/dataset/dataset.tar.bz2
+
+**Download Size**: ~53 GB compressed
+
+**Options**:
+
+**Option A: Direct Download (Recommended)**
+```powershell
+# Create download directory
+cd data\raw
+
+# Using PowerShell
+Invoke-WebRequest -Uri "https://studentlife.cs.dartmouth.edu/dataset/dataset.tar.bz2" -OutFile "dataset.tar.bz2"
+
+# Or using wget (if installed)
+wget https://studentlife.cs.dartmouth.edu/dataset/dataset.tar.bz2
+```
+
+**Option B: Manual Download**
+1. Open browser: https://studentlife.cs.dartmouth.edu/dataset.html
+2. Download: `dataset.tar.bz2`
+3. Move to: `data/raw/dataset.tar.bz2`
+
+---
+
+### Step 2: Extract Dataset
 
 ```powershell
-# Create main directories
-mkdir data, notebooks, src, models, api, tests, configs, docs
+# Navigate to raw data directory
+cd data\raw
 
-# Create data subdirectories
-mkdir data\raw, data\processed, data\features, data\external
+# Extract using 7-Zip (Windows)
+7z x dataset.tar.bz2
+7z x dataset.tar
 
-# Create notebook subdirectories
-mkdir notebooks\01_exploration, notebooks\02_preprocessing, notebooks\03_feature_engineering, notebooks\04_modeling, notebooks\05_evaluation
+# Or using tar (Windows 10+)
+tar -xjf dataset.tar.bz2
 
-# Create src subdirectories
-mkdir src\data, src\features, src\models, src\visualization, src\utils
-
-# Create model subdirectories
-mkdir models\saved_models, models\checkpoints
+# The extraction will create a 'dataset' directory
 ```
 
-**Expected Result**:
+**Expected Directory Structure After Extraction**:
 ```
-StudntLife-Pheno/
-├── data/
-│   ├── raw/
-│   ├── processed/
-│   ├── features/
-│   └── external/
-├── notebooks/
-│   ├── 01_exploration/
-│   ├── 02_preprocessing/
-│   ├── 03_feature_engineering/
-│   ├── 04_modeling/
-│   └── 05_evaluation/
-├── src/
-│   ├── data/
-│   ├── features/
-│   ├── models/
-│   ├── visualization/
-│   └── utils/
-├── models/
-│   ├── saved_models/
-│   └── checkpoints/
-├── api/
-├── tests/
-├── configs/
-└── docs/
+data/raw/dataset/
+├── sensing/
+│   ├── activity/
+│   ├── audio/
+│   ├── bluetooth/
+│   ├── conversation/
+│   ├── gps/
+│   ├── phonecharge/
+│   ├── phonelock/
+│   └── wifi/
+├── EMA/
+│   ├── response/
+│   └── notification/
+├── survey/
+│   ├── pre/
+│   └── post/
+└── education/
 ```
 
 ---
 
-### Step 4: Create README.md
+### Step 3: Document Dataset Structure
 
-Create a comprehensive README with this template:
+Create a data inventory file:
+
+```powershell
+# Create a Python script to analyze dataset
+python -m uv run python
+```
+
+Then run this analysis:
+
+```python
+import os
+import json
+from pathlib import Path
+
+def analyze_dataset(root_path):
+    """Analyze dataset structure and create manifest."""
+    manifest = {
+        "dataset_name": "StudentLife",
+        "total_size_gb": 0,
+        "participants": [],
+        "data_types": {}
+    }
+    
+    root = Path(root_path)
+    
+    # Count files and sizes
+    for dirpath, dirnames, filenames in os.walk(root):
+        rel_path = Path(dirpath).relative_to(root)
+        data_type = str(rel_path).split(os.sep)[0] if len(rel_path.parts) > 0 else "root"
+        
+        if data_type not in manifest["data_types"]:
+            manifest["data_types"][data_type] = {
+                "file_count": 0,
+                "total_size_bytes": 0
+            }
+        
+        for filename in filenames:
+            filepath = Path(dirpath) / filename
+            size = filepath.stat().st_size
+            manifest["data_types"][data_type]["file_count"] += 1
+            manifest["data_types"][data_type]["total_size_bytes"] += size
+            manifest["total_size_gb"] += size / (1024**3)
+    
+    # Save manifest
+    manifest_path = root.parent / "dataset_manifest.json"
+    with open(manifest_path, 'w') as f:
+        json.dump(manifest, f, indent=2)
+    
+    print(f"✅ Manifest created: {manifest_path}")
+    print(f"📊 Total size: {manifest['total_size_gb']:.2f} GB")
+    print(f"📁 Data types: {len(manifest['data_types'])}")
+    
+    return manifest
+
+# Run analysis
+manifest = analyze_dataset("data/raw/dataset")
+```
+
+Save this as `src/data/analyze_dataset.py` and run:
+```bash
+python -m uv run python src/data/analyze_dataset.py
+```
+
+---
+
+### Step 4: Create Data Documentation
+
+Create `data/README.md`:
 
 ```markdown
-# 🎓 StudentLife Digital Phenotyping - ML Project
+# StudentLife Dataset
 
-## 📖 Project Overview
+## Overview
+- **Source**: Dartmouth College
+- **Citation**: Wang, R., et al. (2014)
+- **Duration**: 10 weeks (Spring 2013)
+- **Participants**: 48 students
+- **Total Size**: ~53 GB
 
-This project develops a machine learning system for digital phenotyping using the StudentLife dataset from Dartmouth College. The goal is to predict student mental health states, stress levels, and academic performance from smartphone sensor data.
+## Directory Structure
 
-**Dataset**: [StudentLife Dataset](https://studentlife.cs.dartmouth.edu/dataset.html)
-- 48 participants (undergraduate & graduate students)
-- 10 weeks of continuous sensing data (Spring 2013)
-- 53 GB of sensor data
-- 32,000+ self-reports
-- Pre/post psychological surveys
+### Sensing Data (`sensing/`)
+Passive smartphone sensor data collected continuously.
 
-## 🎯 Objectives
+- **activity/**: Physical activity (stationary, walking, running)
+- **audio/**: Audio features (volume, not raw audio for privacy)
+- **bluetooth/**: Bluetooth device encounters
+- **conversation/**: Conversation detection (yes/no, duration)
+- **gps/**: Location data
+- **phonecharge/**: Phone charging events
+- **phonelock/**: Phone lock/unlock events
+- **wifi/**: WiFi access points detected
 
-1. Predict depression risk from passive smartphone sensing
-2. Forecast stress levels and mood states
-3. Predict academic performance (GPA)
-4. Build interpretable, clinically-relevant models
-5. Deploy as a production-ready API service
+### EMA Data (`EMA/`)
+Ecological Momentary Assessment - self-reported states.
 
-## 🛠️ Tech Stack
+- **response/**: Student responses to EMA prompts
+- **notification/**: EMA notification logs
 
-- **Languages**: Python 3.13+
-- **Package Manager**: uv (modern, fast)
-- **Data**: Pandas, NumPy, SciPy
-- **ML**: Scikit-learn, XGBoost, LightGBM, CatBoost
-- **DL**: PyTorch
-- **API**: FastAPI, Uvicorn
-- **Deployment**: Docker
-- **Experimentation**: Optuna
+### Survey Data (`survey/`)
+Pre/post psychological assessments.
 
-## 📁 Project Structure
+- **pre/**: Beginning of term surveys (PHQ-9, Big Five, etc.)
+- **post/**: End of term surveys
 
-\`\`\`
-├── data/              # Dataset (raw, processed, features)
-├── notebooks/         # Jupyter notebooks (EDA, modeling, evaluation)
-├── src/               # Source code (reusable modules)
-├── models/            # Trained models and checkpoints
-├── api/               # FastAPI deployment
-├── tests/             # Unit and integration tests
-├── configs/           # Configuration files
-├── docs/              # Documentation
-├── pyproject.toml     # Dependencies and metadata
-└── uv.lock            # Locked dependency versions
-\`\`\`
+### Education Data (`education/`)
+Academic performance and deadlines.
 
-## 🚀 Getting Started
+## Data Format
+- Most files are CSV format
+- Timestamped with Unix epoch time
+- Participant IDs: u00 through u59
 
-### Prerequisites
-- Python 3.13 or higher
-- uv (install: \`pip install uv\`)
+## Privacy
+- All data is anonymized
+- Audio is aggregated features only (no raw audio)
+- Location is GPS coordinates (no addresses)
 
-### Installation
-
-1. **Clone the repository**
-   \`\`\`bash
-   git clone <your-repo-url>
-   cd StudntLife-Pheno
-   \`\`\`
-
-2. **Create virtual environment and install dependencies**
-   \`\`\`bash
-   # Sync all dependencies from uv.lock
-   python -m uv sync
-   
-   # Verify installation
-   python -m uv pip check
-   \`\`\`
-
-3. **Download dataset**
-   \`\`\`bash
-   # Download from: https://studentlife.cs.dartmouth.edu/dataset/dataset.tar.bz2
-   # Extract to data/raw/studentlife/
-   \`\`\`
-
-## 📊 Usage
-
-### Run Notebooks
-\`\`\`bash
-python -m uv run jupyter notebook
-\`\`\`
-
-### Train Models
-\`\`\`bash
-python -m uv run python src/models/train_model.py --config configs/experiment_config.yaml
-\`\`\`
-
-### Run API Server
-\`\`\`bash
-python -m uv run uvicorn api.main:app --reload
-\`\`\`
-
-### Run Tests
-\`\`\`bash
-python -m uv run pytest
-\`\`\`
-
-## 📈 Model Performance
-
-_(To be updated with results)_
-
-## 🧑‍💻 Development
-
-See \`development_guide.md\` for detailed progress tracking and setup instructions.
-
-## 📝 License
-
-_(Add license information)_
-
-## 🙏 Acknowledgments
-
-- StudentLife Dataset: Wang et al., Dartmouth College
-- Inspired by: [ML Zoomcamp FastAPI+UV Workshop](https://github.com/DataTalksClub/machine-learning-zoomcamp/tree/master/05-deployment/workshop)
-
-## 📧 Contact
-
-_(Your contact information)_
+## Usage
+See `notebooks/01_exploration/` for data exploration examples.
 ```
 
-**Customize**:
-- Add your name/contact
-- Adjust based on your preferences
-- Keep it professional!
+---
+
+### Step 5: Verify Dataset Integrity
+
+Run verification checks:
+
+```python
+# Create src/data/verify_dataset.py
+import os
+from pathlib import Path
+
+def verify_dataset(dataset_path):
+    """Verify dataset integrity."""
+    checks = {
+        "sensing_dirs": ["activity", "audio", "bluetooth", "conversation", "gps", 
+                        "phonecharge", "phonelock", "wifi"],
+        "ema_dirs": ["response", "notification"],
+        "survey_dirs": ["pre", "post"],
+        "education_dirs": []
+    }
+    
+    issues = []
+    dataset = Path(dataset_path)
+    
+    # Check sensing directories
+    sensing = dataset / "sensing"
+    for dir_name in checks["sensing_dirs"]:
+        dir_path = sensing / dir_name
+        if not dir_path.exists():
+            issues.append(f"Missing: {dir_path}")
+        elif not list(dir_path.glob("*.csv")):
+            issues.append(f"Empty: {dir_path}")
+    
+    # Check EMA directories
+    ema = dataset / "EMA"
+    for dir_name in checks["ema_dirs"]:
+        dir_path = ema / dir_name
+        if not dir_path.exists():
+            issues.append(f"Missing: {dir_path}")
+    
+    if issues:
+        print("⚠️ Issues found:")
+        for issue in issues:
+            print(f"  - {issue}")
+        return False
+    else:
+        print("✅ Dataset verification passed!")
+        print(f"✅ All expected directories present")
+        return True
+
+# Run verification
+verify_dataset("data/raw/dataset")
+```
 
 ---
 
-### Step 5: Verify Setup
+### Step 6: Update .gitignore
 
-Run these checks before submitting:
+Ensure large data files are not tracked:
 
-1. **Check directory structure**:
-   ```bash
-   tree /F  # Windows
-   # or: Get-ChildItem -Recurse | Select-Object FullName
-   ```
+```bash
+# Verify .gitignore excludes data
+cat .gitignore | grep "data/"
 
-2. **Verify packages installed**:
-   ```python
-   python -m uv run python -c "import pandas; import numpy; import sklearn; import torch; print('✅ All imports successful!')"
-   ```
-
-3. **Check files**:
-   ```bash
-   # Should have:
-   # - pyproject.toml
-   # - uv.lock
-   # - README.md
-   # - development_guide.md
-   # - All directories created
-   ```
-
-4. **Check Git status**:
-   ```bash
-   git status
-   ```
-   Verify that `data/`, `models/`, `.venv/` are NOT shown (should be ignored)
-
-5. **Create first commit**:
-   ```bash
-   git add .
-   git commit -m "feat: Initialize project with modern uv workflow and directory structure"
-   ```
+# Should already have:
+# data/
+# *.csv
+# *.tar.bz2
+```
 
 ---
 
-## 📤 Submission
+## 📤 Submission Checklist
 
-When you've completed all steps:
-
-1. **Take screenshots** of:
-   - Your directory structure
-   - Successful package imports
-   - Git status showing proper ignores
-
-2. **Update development_guide.md**:
-   - Add Task 1.1 to "Completed Tasks" section
-   - Document any challenges faced
-   - Note lessons learned
-
-3. **Ready for next task**: Task 1.2 - Setup Development Environment
+When completed:
+- [ ] Dataset downloaded (`data/raw/dataset.tar.bz2`)
+- [ ] Dataset extracted (`data/raw/dataset/`)
+- [ ] Data manifest created (`data/raw/dataset_manifest.json`)
+- [ ] Data README.md created
+- [ ] Verification script run successfully
+- [ ] No data files in git (check with `git status`)
 
 ---
 
 ## 💡 Hints & Tips
 
-1. **Directory structure**: Already mostly created (api, configs, data, etc.), just add subdirectories
-2. **README**: Use the template, customize to your style
-3. **Git commit**: Use conventional commits format: `feat:`, `fix:`, `docs:`, etc.
-4. **Torch still downloading?**: That's fine, it's in background
+1. **Download taking forever?**: The dataset is 53GB. Use a stable connection or download overnight
+2. **Extraction failed?**: Make sure you have enough disk space (~100GB free recommended)
+3. **Missing 7-zip?**: Download from https://www.7-zip.org/
+4. **Verification failed?**: Check if extraction completed fully
+5. **Git showing data files?**: Verify `.gitignore` is working
 
 ---
 
-## ❓ Questions?
+## ❓ Common Questions
 
-If you're stuck or unsure, ask me! Common questions:
+**Q: Do I commit the dataset?**  
+A: **NO!** The dataset is 53GB. It's in `.gitignore` and stays local only.
 
-- "How do I verify torch installed?" → `python -m uv pip show torch`
-- "What if git status shows too many files?" → Check .gitignore is working
-- "Should I commit uv.lock?" → Yes! It's critical for reproducibility
+**Q: What if download fails?**  
+A: Resume using `wget -c` or download manager. Or download in chunks if possible.
+
+**Q: Do I need all the data?**  
+A: Yes, for a complete analysis. But you can start EDA with a subset (few participants).
 
 ---
 
-**Good luck! You're almost done with Task 1.1! 🚀**
+**Note**: Dataset download may take several hours. You can continue with other learning while it downloads!
 
 ---
 

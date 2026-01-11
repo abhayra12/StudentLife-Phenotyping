@@ -1,7 +1,7 @@
 [project]
 name = "studntlife-pheno"
 version = "0.1.0"
-description = "Add your description here"
+description = "ML system for digital phenotyping - predicting student mental health and academic performance from smartphone sensor data"
 requires-python = ">=3.13"
 dependencies = [
     "catboost>=1.2.8",

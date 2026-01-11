@@ -77,24 +77,39 @@ This project develops a machine learning system for digital phenotyping using th
 
 ## 📊 Usage
 
-### Run Notebooks
+### Activate Virtual Environment (Optional)
 ```bash
-python -m uv run jupyter notebook
+# If you prefer activating venv:
+.venv\Scripts\activate  # Windows
+# source .venv/bin/activate  # Mac/Linux
+
+# Then run commands directly:
+python src/script.py
+jupyter notebook
 ```
 
-### Train Models
+### Or Use `uv run` (Recommended - No Activation Needed)
 ```bash
-python -m uv run python src/models/train_model.py --config configs/experiment_config.yaml
+# Run any command without activating venv:
+uv run jupyter notebook
+uv run python src/models/train_model.py --config configs/experiment_config.yaml
+uv run uvicorn api.main:app --reload
+uv run pytest
 ```
 
-### Run API Server
+### Example Commands
 ```bash
-python -m uv run uvicorn api.main:app --reload
-```
+# Start Jupyter for notebooks
+uv run jupyter notebook
 
-### Run Tests
-```bash
-python -m uv run pytest
+# Train a model
+uv run python src/models/train_model.py
+
+# Run API server  
+uv run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Run tests
+uv run pytest tests/
 ```
 
 ## 📈 Model Performance
