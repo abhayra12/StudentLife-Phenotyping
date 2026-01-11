@@ -1,0 +1,1342 @@
+StudentLife: Assessing Mental Health, Academic
+Performance and Behavioral Trends of College Students
+using Smartphones
+Rui Wang†, Fanglin Chen †, Zhenyu Chen †, Tianxing Li †, Gabriella Harari ‡,
+Stefanie Tignor∗, Xia Zhou †, Dror Ben-Zeev†, and Andrew T. Campbell †
+Dartmouth College†, The University of Texas at Austin ‡, Northeastern University ∗
+{ruiwang, chentc, zhenyu, ltx, xia, campbell }@cs.dartmouth.edu,
+gabriella.harari@utexas.edu, tignor.s@husky.neu.edu, dror.ben-zeev@dartmouth.edu
+ABSTRACT
+Much of the stress and strain of student life remains hidden.
+The StudentLife continuous sensing app assesses the day-to-
+day and week-by-week impact of workload on stress, sleep,
+activity, mood, sociability, mental well-being and academ ic
+performance of a single class of 48 students across a 10 week
+term at Dartmouth College using Android phones. Results
+from the StudentLife study show a number of signiﬁcant cor-
+relations between the automatic objective sensor data from
+smartphones and mental health and educational outcomes of
+the student body. We also identify a Dartmouth term lifecycle
+in the data that shows students start the term with high pos-
+itive affect and conversation levels, low stress, and healt hy
+sleep and daily activity patterns. As the term progresses an d
+the workload increases, stress appreciably rises while pos i-
+tive affect, sleep, conversation and activity drops off. Th e
+StudentLife dataset is publicly available on the web.
+Author Keywords
+Smartphone sensing; data analysis; mental health; academi c
+performance; behavioral trends
+ACM Classiﬁcation Keywords
+H.1.2 User/Machine Systems; I.5 Pattern Recognition; J.3
+Life and Medical Sciences
+General Terms
+Algorithms, Experimentation.
+INTRODUCTION
+Many questions arise when we think about the academic per-
+formance of college students. Why do some students do bet-
+ter than others? Under similar conditions, why do some in-
+dividuals excel while others fail? Why do students burnout,
+drop classes, even drop out of college? What is the impact of
+stress, mood, workload, sociability, sleep and mental well -
+being on educational performance? In this paper, we use
+Permission to make digital or hard copies of all or part of thi s work for personal or
+classroom use is granted without fee provided that copies ar e not made or distributed
+for proﬁt or commercial advantage and that copies bear this n otice and the full cita-
+tion on the ﬁrst page. Copyrights for components of this work owned by others than
+ACM must be honored. Abstracting with credit is permitted. T o copy otherwise, or re-
+publish, to post on servers or to redistribute to lists, requ ires prior speciﬁc permission
+and/or a fee. Request permissions from Permissions@acm.or g.
+Ubicomp ’14, September 13 - 17 2014, Seattle, W A, USA
+Copyright 2014 ACM 978-1-4503-2968-2/14/09...$15.00.
+http://dx.doi.org/10.1145/2632048.2632054
+smartphones carried by students to ﬁnd answers to some of
+these pressing questions.
+Consider students at Dartmouth College, an Ivy League col-
+lege in a small New England college town. Students typically
+take three classes over a 10-week term and live on campus.
+Dartmouth classes are generally demanding where student as-
+sessment is primarily based on class assignments, projects ,
+midterms and ﬁnal exams. Students live, work and social-
+ize on a small self-contained campus representing a tightly -
+knit community. The pace of the 10 week Dartmouth term is
+fast in comparison to a 15 week semester. The atmosphere
+among the students on campus seems to visibly change from
+a relaxed start of term, to an intense midterm and end of
+term. Typically classes at Dartmouth are small ( e.g., 25-50
+students), but introductory classes are larger ( e.g., 100-170),
+making it difﬁcult for a faculty to follow the engagement or
+performance of students on an individual level. Unless stu-
+dents contact a student dean or faculty about problems in their
+lives, the impact of such challenges on performance remains
+hidden.
+To shine a light on student life we develop the StudentLife
+smartphone app and sensing system to automatically infer hu-
+man behavior in an energy-efﬁcient manner. The StudentLife
+app integrates MobileEMA, a ﬂexible ecological momentary
+assessment [37] (EMA) component to probe students’ states
+(e.g., stress, mood) across the term. We administer a number
+of well-known pre-post health and behavioral surveys at the
+start and end of term. We present the results from a deploy-
+ment of StudentLife on Google Nexus 4 Android phones at
+Dartmouth College.
+StudentLife makes a number of contributions. First, to the
+best of our knowledge we are the ﬁrst to use automatic and
+continuous smartphone sensing to assess mental health, aca -
+demic performance and behavioral trends of a student body.
+Second, we identify strong correlation between automatic
+sensing data and a broad set of well-known mental well-
+being measures, speciﬁcally, PHQ-9 depression, perceived
+stress (PSS), ﬂourishing, and loneliness scales. Results i ndi-
+cate that automatically sensed conversation, activity, mo bil-
+ity, and sleep have signiﬁcant correlations with mental wel l-
+being outcomes. We also observe strong correlations be-
+tween academic performance and automatic sensing data and
+mental well-being. We ﬁnd usage patterns of an online ed-
+
+ucational tool (i.e., Piazza) correlates with academic per for-
+mance. Third, we observe trends in the sensing data, termed
+the Dartmouth term lifecycle , where students start the term
+with high positive affect and conversation levels, low stre ss,
+and healthy sleep and daily activity patterns. As the term pr o-
+gresses and the workload increases, stress appreciably ris es
+while activity, sleep, conversation, positive affect, vis its to
+the gym and class attendance drop.
+RELATED WORK
+There is a growing interest in using smartphone sensing [31,
+9, 12, 11, 40, 8, 15] to infer human dynamics and behavioral
+health [7, 34, 25, 21, 18, 23, 35, 28, 30]. The StudentLife
+study is inﬂuenced by a number of important behavioral stud-
+ies: 1) the friends-and-families study [7], which uses Funf [3]
+to collect data from 130 adult members ( i.e., post-docs, uni-
+versity employees) of a young family community to study ﬁt-
+ness intervention and social incentives; and 2) the reality min-
+ing project [20], which uses sensor data from mobile phones
+to study human social behavior in a group of students at MIT.
+The authors show that call records, cellular-tower IDs, and
+Bluetooth proximity logs accurately detect social network s
+and daily activity.
+There is little work on correlations between continuous and
+automatic sensing data from smartphones and mental health
+outcomes such as PHQ-9. However, the authors in [34] use
+wearable sensors ( i.e., Intel’s mobile sensing platform) to
+study the physical and mental well-being of a group of 8 se-
+niors living in a continuing care retirement community over
+a single week. The retirement community study [34] is the
+ﬁrst to ﬁnd correlations with depression and continuous sen s-
+ing measures from wearables. In [33], the authors monitor
+bipolar disorder in patients using wearable sensors, but th e
+project does not enable continuous sensing data. In [22, 10] ,
+the authors present an approach that collects self-assessm ent
+and sensor data on a smartphone as a means to study patients’
+mood. They ﬁnd that self-reported activity, stress, sleep a nd
+phone usage are strongly correlated with self-reported moo d.
+Health Buddy [24] presents patients with a series of pre-
+programmed questions about symptoms of depression and
+suicide, allowing mental health service providers to monit or
+patients’ symptoms. No continuously sensing is used. Mobi-
+lyze is an intervention system [13] that uses smartphones to
+predict self-reported states (e.g., location, alone, mood ) using
+machine learners. Results indicate that Mobilyze can predi ct
+categorical contextual states (e.g., location, with friends) with
+good accuracy but predicting internal states such as mood
+show poorer predictive power.
+There is a considerable interest in studying the health and
+performance of students. However, no study has used smart-
+phone sensing to study these issues. In [39], the authors stu dy
+the effect of behaviors (i.e., social support, sleep habits, work-
+ing hours) on grade points based on 200 randomly chosen
+students living on the campus at a large private university.
+However, this study uses retrospective survey data manuall y
+entered by users to assess health and performance. Watan-
+abe [41, 42] uses a wearable sensor device to investigate the
+correlation between face-to-face interaction between students
+during break times and scholastic performance.
+STUDY DESIGN
+In this section, we discuss how participants were recruited
+from the student body, and then describe our data collection
+process. We also discuss compliance and data quality issues
+in this longitudinal study.
+Participants
+All participants in the study were voluntarily recruited fr om
+the CS65 Smartphone Programming class [1], a computer sci-
+ence programing class at Dartmouth College offered to both
+undergraduate and graduate students during Spring term in
+2013. This study is approved by the Institutional Review
+Board at Dartmouth College. 75 students enrolled in the clas s
+and 60 participants joined the study. As the term progressed ,
+7 students dropped out of the study and 5 dropped the class.
+We remove this data from the dataset analyzed in the Results
+Section. Among the 48 students who complete the study, 30
+are undergraduates and 18 graduate students. The class de-
+mographics are as follows: 8 seniors, 14 juniors, 6 sopho-
+mores, 2 freshmen, 3 Ph.D students, 1 second-year Masters
+student, and 13 ﬁrst-year Masters students. In terms of gen-
+der, 10 participants are female and 38 are male. In terms of
+race, 23 participants are Caucasians, 23 Asians and 2 African-
+Americans. 48 participants ﬁnished the pre psychological
+surveys and 41 participants ﬁnished all post psychological
+surveys.
+All students enrolled in the class were offered unlocked An-
+droid Nexus 4s to complete assignments and class projects.
+Many students in the study had their own iPhones or An-
+droid phones. We denote the students who use their own An-
+droid phones to run the StudentLife sensing system as pri-
+mary users and those who use the Nexus 4s as secondary
+users. Secondary users have the burden of carrying both their
+own phones and the Nexus 4s during the study. We discuss
+compliance and data quality of users in the Compliance and
+Data Quality Section.
+Study Procedure
+The StudentLife study consists of orientation, data collec -
+tion and exit stages. In addition, we deployed a number of
+management scripts and incentive mechanisms to analyze and
+boost compliance, respectively.
+Entry and Exit. During the orientation stage, participants
+sign the consent form to join the study. Each student is given
+a one-on-one tutorial of the StudentLife system and study.
+Prior to signing the consent form, we detail the type of data t o
+be collected by the phone. Students are trained to use the app .
+Students do not need to interact with the background sensing
+or upload functions. They are shown how to respond to the
+MobileEMA system. A series of entry health and psycholog-
+ical baseline surveys are administered using SurveyMonkey
+as discussed in the Results Section and shown in Table 1. As
+part of the entry survey students provide demographic and
+information about their spring term classes. All surveys ar e
+administered using SurveyMonkey [6]. These surveys are pre
+
+measures which cover various aspects of mental and physical
+health. Outcomes from surveys ( e.g., depression scale) are
+used as ground truth in the analysis. During the exit stage, w e
+administered an exit survey, interview and the same set of be -
+havioral and health surveys given during the orientation st age
+as post measures.
+Data Collection. The data collection phase lasted for 10
+weeks for the complete spring term. After the orientation se s-
+sion, students carried the phones with them throughout the
+day. Automatic sensing data is collected without any user
+interaction and uploaded to the cloud when the phone is be-
+ing recharged and under WiFi. During the collection phase,
+students were asked to respond to various EMA questions as
+they use their phones. This in-situ probing of students at mu l-
+tiple times during the day provides additional state inform a-
+tion such as stress, mood, happiness, current events, etc. T he
+EMA reports were provided by a medical doctor and a num-
+ber of psychologists on the research team. The number of
+EMAs ﬁred each day varied but on average 8 EMAs per day
+were administered. For example, on days around assignment
+deadlines, we scheduled multiple stress EMAs. We set up
+EMA schedules on a week-by-week basis. On some days
+we administer the same EMA ( e.g., P AM and stress) multiple
+times per day. On average, we administer 3-13 EMA ques-
+tions per day (e.g., stress). The speciﬁc EMAs are discussed
+in the Dataset Section.
+Data Collection Monitoring. StudentLife includes a num-
+ber of management scripts that automatically produce stati s-
+tics on compliance. Each time we notice students’ phones not
+uploading daily data ( e.g., students left phones in their dorms
+during the day), or gaps in weekly data ( e.g., phones powered
+down at night), or no response to EMAs, we sent emails to
+students to get them back on track.
+Incentives. To promote compliance and data quality, we of-
+fer a number of incentives across the term. First, all studen ts
+receive a StudentLife T-shirt. Students could win prizes du r-
+ing the study. At the end of week 3, we gave away 5 Jawbone
+UPs to the 5 top student collectors randomly selected from
+the top 15 collectors. We repeated this at week 6. We deﬁned
+the top collectors as those providing the most automatic sen s-
+ing and EMA data during the speciﬁc period. At the end of
+the study, we gave 10 Google Nexus 4 phones to 10 collectors
+who were randomly selected from the top 30 collectors over
+the complete study period.
+Privacy considerations. Participants’ privacy is a major
+concern of our study. In order to protect participants’ pers onal
+information, we fully anonymize each participant’s identi ty
+with a random user id and kept the user id map separate from
+all other project data so that the data cannot be traced back t o
+individuals. Call logs and SMS logs are one-way hashed so
+that no one can get phone numbers or messages from the data.
+Participants’ data is uploaded using encrypted SSL connec-
+tions to ensure that their data cannot be intercepted by thir d-
+parties. Data is stored on secured servers. When people left
+the study their data was removed.
+Compliance and Data Quality
+The StudentLife app does not provide students any feedback
+by design. We do not want to inﬂuence student behavior by
+feedback, rather, we aim to unobtrusively capture student life.
+Longitudinal studies such as StudentLife suffer from a drop
+in student engagement and data quality. While automatic sen -
+sor data collection does not introduce any burden other than
+carrying a phone, collecting EMA data can be a considerable
+burden. Students typically are compliant in responding to sur-
+vey questions at the start of a study, but as the novelty effec t
+wears off, student compliance drops.
+There is a 60/40 split of iPhone/Android users in the study
+group. Of the 48 students who completed the study, 11 are
+primary phone users and 37 secondary users. One concern is
+that the burden of carrying two phones for 10 weeks would re-
+sult in poorer data quality from the secondary users compare d
+to the primary users. Figure 1(a) shows the average hours of
+sensor data we have collected from each participant during
+the term. As expected, we observe that primary users are bet-
+ter data sources, but there is no signiﬁcant difference. We c an
+clearly see the trend of data dropping off as the term winds
+down. Achieving the best data quality requires 24 hours of
+continuous sensing each day. This means that users carry
+their phones and power their phones at night. If we detect tha t
+a student leaves their phone at the dorm during the day, or it
+is powered down, then we remove that data from the dataset.
+The overall compliance of collecting automatic sensing dat a
+from primary and secondary users over the term is 87% and
+81%, respectively.
+Figure 1(b) shows the average number of EMA responses per
+day for primary and secondary users. The ﬁgure does not cap-
+ture compliance per se, but it shows that secondary users are
+slightly more responsive to EMAs than primary users. On av-
+erage we receive 5.8 and 5.4 EMAs per day per student across
+the whole term from secondary and primary users, respec-
+tively. As the term progresses there is a drop in both adminis -
+tered EMAs and responses. However, even at the end of term,
+we still receive over 2 EMAs per day per student. Surpris-
+ingly, secondary users (72%) have better EMA compliance
+than primary users (65%). During the exit survey, students fa-
+vored short P AM-style EMAs (see Figure 3(a)), complained
+about the longer EMAs, and discarded repetitive EMAs as the
+novelty wore off. By design, there is no notiﬁcation when an
+EMA is ﬁred. Participants need to actively check their phone
+to answer scheduled EMA questions. The EMA compliance
+data (see Figure 1(b)) shows that there are no signiﬁcant dif -
+ferences between primary and secondary phone users. It in-
+dicates that secondary phone users also used the study phone
+when they were taking the phone with them. Therefore, the
+study phone can capture the participants’ daily behavior ev en
+it was not their primary phone.
+In summary, Figure 1 shows the cost of collecting continu-
+ous and EMA data across a 10-week study. There is a small
+difference between primary and secondary collectors for co n-
+tinuous sensing and EMA data, but the compliance reported
+above is promising and gives conﬁdence in the analysis dis-
+cussed in the Results Section.
+
+ 0
+ 4
+ 8
+ 12
+ 16
+ 20
+ 24
+1 8 15 22 29 36 43 50 57 64
+1 2 3 4 5 6 7 8 9 10
+Hours of data collected
+Day
+Week
+overall
+primary users
+secondary users
+(a) Automatic sensing data quality over the term
+ 0
+ 3
+ 6
+ 9
+ 12
+ 15
+1 8 15 22 29 36 43 50 57 64
+1 2 3 4 5 6 7 8 9 10
+Number of responses
+Day
+Week
+overall
+primary users
+secondary users
+(b) EMA data quality over the term
+Figure 1. Compliance and quality of Stu-
+dentLife data collected across the term.
+accelerometer
+microphone
+light Sensor
+GPS/Bluetooth
+activity
+conversation
+sleep
+location/co-
+location
+mental health
+academic 
+performance
+mobile EMA
+automatic  
+continuous 
+sensing
+self-reports
+behavioral  
+classifiers
+statistical 
+analysis 
+SurveyMonkey
+social
+exercise
+behavior
+outcomes
+mood
+stress EMAs
+Android phone cloud
+others
+Dartmouth 
+term lifecycle
+StudentLife 
+cloud
+Figure 2. StudentLife app, sensing and analytics system arc hitecture.
+STUDENTLIFE APP AND SENSING SYSTEM
+In what follows, we describe the design of the StudentLife
+app and sensing system, as shown in Figure 2.
+Automatic and Continuous Sensing
+We build on our prior work on the BeWell App [27] to provide
+a framework for automatic sensing in StudentLife. The Stu-
+dentLife app automatically infers activity (stationary, w alk-
+ing, running, driving, cycling), sleep duration, and socia bil-
+ity ( i.e., the number of independent conservations and their
+durations). The app also collects accelerometer, proximit y,
+audio, light sensor readings, location, colocation, and ap pli-
+cation usage. The inferences and other sensor data are tem-
+porarily stored on the phone and are efﬁciently uploaded to
+the StudentLife cloud when users recharge their phones under
+WiFi. In what follows, we discuss the physical activity, so-
+ciability/conversation and sleep inferences computed on t he
+phone which represent important heath well-being indicato rs
+[27].
+Activity Detection. We use the physical activity classiﬁer
+from our prior work [27, 29] to infer stationary, walking, ru n-
+ning, driving and cycling based on features extracted from ac-
+celerometer streams. The activity classiﬁer extracts feat ures
+from the preprocessed accelerometer stream, then applies a
+decision tree to infer the activity using the features. The a c-
+tivity classiﬁer achieves overall 94% of accuracy [29]. (No te,
+we conducted our study before Google announced the avail-
+ability of an activity recognition service for Android phon es).
+We extend our prior work to compute a daily activity dura-
+tion, and indoor and outdoor mobility measures, discussed a s
+follows. The activity classiﬁer generates an activity labe l ev-
+ery 2 seconds. We are only interested in determining whether
+a participant is moving. For each 10-min period, we calculat e
+the ratio of non-stationary inferences. If the ratio is grea ter
+than a threshold, we consider this period active, meaning th at
+the user is moving. We add up all the 10-min active periods
+as the daily activity duration. Typically, students leave t heir
+dorms in the morning to go to various buildings on campus
+during the day. Students spend a considerable amount of time
+in buildings (e.g., cafes, lecture rooms, gym). We consider the
+overall mobility of a student consists of indoor and outdoor
+mobility. We compute the outdoor mobility (aka traveled dis-
+tance) as the distance a student travels around campus durin g
+the day using periodic GPS samples. Indoor mobility is com-
+puted as the distance a student travels inside buildings dur ing
+the day using WiFi scan logs. Dartmouth College has WiFi
+coverage across all campus buildings. As part of the study,
+we collect the locations of all APs in the network, and the
+Wi-Fi scan logs including all encountered BSSIDs, SSIDs,
+and their signal strength values. We use the BSSIDs and sig-
+nal strength to determine if a student is in a speciﬁc buildin g.
+If so, we use the output of activity classiﬁer’s walk inferen ce
+to compute the activity duration as a measure of indoor mo-
+bility. Note, that Dartmouth’s network operations provide d
+access to a complete AP map of the campus wireless network
+as part of the IRB.
+Conversation Detection. StudentLife implements two clas-
+siﬁers on the phone for audio and speech/conversation detec -
+tion: an audio classiﬁer to infer human voice, and a conver-
+sation classiﬁer to detect conversation. We process audio o n
+the ﬂy to extract and record features. We use the privacy-
+sensitive audio and conversation classiﬁers developed in o ur
+prior work [34, 27]. Note, the audio classiﬁcation pipeline
+never records conversation nor analyses content. We ﬁrst seg-
+ment the audio stream into 15-ms frames. The audio classi-
+ﬁer then extracts audio features, and uses a two-state hidde n
+Markov model (HMM) to infer speech segments. Our clas-
+siﬁer does not implement speaker identiﬁcation. It simply
+infers that the user is “around conversation” using the out-
+put of the audio classiﬁer as an input to a conservation clas-
+siﬁer. The output of the classiﬁcation pipeline captures th e
+number of independent conversations and their duration. We
+consider the frequency and duration of conversations aroun d
+a participant as a measure of sociability. Because not all
+
+(a) PAM EMA
+ (b) Stress EMA
+Figure 3. MobileEMA: First the PAM popup ﬁres followed by one of the
+StudentLife EMAs – in this example the single item stress EMA .
+conservations are social, such as lectures and x-hours ( i.e.,
+class meetings outside lectures), we extend our conservati on
+pipeline in the cloud to remove conversations associated wi th
+lectures and x-hours. We use student location to determine
+if they attend lectures and automatically remove the conser -
+vation data correspondingly from the dataset discussed in t he
+Dataset Section. We also keep track of class attendance for
+all students across all classes, as discussed in the Results Sec-
+tion.
+Sleep Detection. We implement a sleep classiﬁer based
+on our previous work [14, 27]. The phone unobtrusively in-
+fers sleep duration without any special interaction with th e
+phone (e.g., the user does not have to sleep with the de-
+vice). The StudentLife sleep classiﬁer extracts four types
+of features: light features, phone usage features includin g
+the phone lock state, activity features ( e.g., stationary), and
+sound features from the microphone. Any of these features
+alone is a weak classiﬁer for sleep duration because of the
+wide variety of phone usage patterns. Our sleep model com-
+bines these features to form a more accurate sleep model and
+predictor. Speciﬁcally, the sleep model assumes that sleep
+duration ( Sl) is a linear combination of these four factors:
+Sl = ∑4
+i=1 αi · Fi, α i ≥ 0 where αi is the weight of the cor-
+responding factor. We train the model using the method de-
+scribed in [14] with an accuracy of +/- 32 mins to the ground
+truth. We extend this method to identify the sleep onset time
+by looking at when the user is sedentary in term of activity,
+audio, and phone usage. We compare the inferred sleep onset
+time from a group of 10 students who use the Jawbone UP
+during the study to collect sleep data. Our method predicts
+bedtime where 95% of the inferences have an accuracy of +/-
+25 mins of the ground truth. The output of our extended sleep
+classiﬁer is the onset of sleep (i.e., bedtime), sleep durat ion
+and wake up time.
+MobileEMA
+We use in-situ ecological momentary assessment (EMA) [37]
+to capture additional human behavior beyond what the sur-
+veys and automatic sensing provide. The user is prompted
+by a short survey ( e.g., the single item [38] stress survey as
+shown in Figure 3(b)) scheduled at some point during their
+day. We integrate an EMA component into the StudentLife
+app based on extensions to Google P ACO [4]. P ACO is an
+extensible framework for quantiﬁed self experiments based
+on EMA. We extend P ACO to incorporate:
+• photographic affect meter (PAM) [32] to capture partici-
+pant’s instantaneous mood;
+• pop-up EMAs to automatically present a short survey to the
+user when they unlock or use the phone; and,
+• EMA schedule and sync feature to automatically push a
+new EMA schedule to all participants and synchronize the
+new schedule with StudentLife cloud.
+P ACO is a self-contained and complex backend app and ser-
+vice. We extend and remove features and integrate the EMA
+component into the StudentLife app and cloud. We set up
+EMA questions and schedules using the P ACO server-side
+code [4]. The cloud pushes new EMA questions to the
+phones. The StudentLife app sets up an alarm for each EMA
+in the list and ﬁres it by pushing it to the users’ phone screen
+as a pop-up. We implement P AM [32] on the Nexus 4 as
+part of the EMA component. P AM presents the user with a
+randomized grid of 16 pictures from a library of 48 photos.
+The user selects the picture that best ﬁts their mood. Fig-
+ure 3(a) shows the P AM pop-up asking the user to select one
+of the presented pictures. P AM measures affect using a sim-
+ple visual interface. P AM is well suited to mobile usage be-
+cause users can quickly click on a picture and move on. Each
+picture represents a 1-16 score, mapping to the Positive and
+Negative Affect Schedule (P ANAS) [43]. P AM is strongly
+correlated with P ANAS (r = 0 .71, p < 0.001) for positive
+affect. StudentLife schedules multiple EMAs per day. We
+took the novel approach of ﬁring P AM before showing one of
+the scheduled EMAs ( e.g., stress survey). Figure 3(b) shows
+an EMA test after the P AM pop-up. We are interested in how
+students’ mood changes during the day. By always preceding
+any EMA with P AM, we guarantee a large amount of affect
+data during the term.
+STUDENTLIFE DATASET
+Using the StudentLife system described in StudentLife Sens -
+ing System Section, we collect a dataset from all subjects in -
+cluding automatic sensor data, behavioral interferences, and
+self-reported EMA data. Our ground truth data includes be-
+havioral and mental health outcomes computed from survey
+instruments detailed in Table 1, and academic performance
+from spring term and cumulative GP A scores provided by the
+registrar. We discuss three epochs that are evident in the Stu-
+dentLife dataset. We uses these epochs ( i.e., day 9am–6pm,
+evening 6pm–12am, night 12am–9am) as a means to analyze
+some of the data, as discussed in the Results Section. The
+StudentLife dataset is publicly available [5].
+Automatic Sensing Data. We collect a total of 52.6 GB of
+sensing inference data from smartphones over 10 weeks. The
+data consist of: 1) activity data, including activity durat ion
+(total time duration the user moves per day), indoor mobilit y
+
+Fri
+Thu
+Wed
+Tue
+Mon
+8 9 10 11 12 1 2 3 4 5 6 7 8
+time of the day (8 am - 8 pm)
+ 0
+ 5
+ 10
+ 15
+ 20
+ 25
+ 30
+ 35
+ 40
+ 45
+ 50
+number of participants
+(a) Meeting time for all classes over the term
+ 0
+ 50
+ 100
+ 150
+ 200
+ 250
+9 10 11 12 1 2 3 4 5 6 7
+Number of instances
+time of the day (9pm - 7am)
+(b) Sleep onset time distribution for all students over the t erm
+Figure 4. Statistics on class meeting times and sleep onset t ime (i.e., bedtime).
+Table 1. Mental well-being surveys.
+survey measure
+patient health
+depression levelquestionnaire
+(PHQ-9) [26]
+perceived stress scale stress level(PSS)[17]
+ﬂourishing scale ﬂourishing level[19]
+UCLA loneliness loneliness levelscale [36]
+Table 2. PHQ-9 depression scale interpretation and pre-pos t class out-
+comes.
+depression minimal minor moderate moderately severeseverity severe
+score 1-4 5-9 10-14 15-19 20-27
+number of
+17 15 6 1 1students
+(pre-survey)
+number of
+19 12 3 2 2students
+(post-survey)
+and the total traveled distance (i.e., outdoor mobility) per day;
+2) conversation data, including conversation duration and fre-
+quency per day; 3) sleep data, including sleep duration, sle ep
+onset and waking time; and ﬁnally 4) location data, includin g
+GPS, inferred buildings when the participant is indoors, an d
+the number of co-located Bluetooth devices.
+Epochs. Students engage in different activities during the
+day and night. As one would expect, sleep and taking classes
+dominate a student’s week. Figure 4(a) shows the collective
+timetable of class meetings for all the classes taken by the
+students in the study. The darker the slot, the greater propo r-
+tion of students taking classes in the slot. We can observe
+that Monday, Wednesday, Friday slots from 10:00-11:05 am
+and the x-period on Thursday 12:00-12:50 pm are dominant
+across the week; this is the teaching time for the CS65 Smart-
+phone Programming class which all students in the study are
+enrolled in. Figure 4(a) clearly indicates that the timetab le of
+all classes ranges from 9am to 6pm – we label this as the day
+epoch. Students are not taking classes for the complete pe-
+riod. Many class, social, sports, and other activities take place
+during the day epoch but class is dominant. The next domi-
+nant activity is sleep. Students go to bed at different times .
+Figure 4(b) shows the distribution of bedtime for all studen ts
+across the term. We see that most students go to bed between
+12am and 4am but the switch from evening to night starts at
+12am, as shown in Figure 4(b). We label the period between
+12am and 9am as the night epoch , when most students are
+working, socializing or sleeping – but sleep is the dominant
+activity. We consider the remaining period between the end of
+classes (6pm) and sleep (12am) as the evening epoch. We hy-
+pothesize that this is the main study and socialization peri od
+during weekdays. We deﬁne these three epochs as a means to
+analyze data, as discussed in the Results Section. We appre-
+ciate that weekdays are different from weekends but conside r
+epochs uniformly across the complete week. We also look
+for correlations in complete days (e.g., Monday) and across
+epochs (i.e., Monday day, evening and night).
+EMA Data. Students respond to psychological and behav-
+ioral EMAs on their smartphones that are scheduled, man-
+aged, and synchronized using the MobileEMA component
+integrated into StudentLife app. We collect a total of 35,29 5
+EMA and P AM responses from 48 students over 10 weeks.
+EMA and P AM data are automatically uploaded to the cloud
+when students recharge their phones under WiFi. Students
+respond to a number of scheduled EMAs including stress
+(stress EMA), mood (mood EMA), sleep duration (sleep
+EMA)(which we use to conﬁrm the performance of our sleep
+classiﬁer), the number of people students encountered per day
+(social EMA), physical exercise (exercise EMA), time spent
+on different activities (activity EMA), and short personal ity
+item (behavior EMA). All EMAs were either existing vali-
+dated EMAs (e.g., single item stress measure [38]) found in
+the literature, or provided by psychologist on the team (e.g .,
+mood EMA).
+Survey Instrument Data. Table 1 shows the set of surveys
+for measuring behavioral and mental well-being we adminis-
+ter as part of our pre-post stages, as discussed in Study De-
+sign Section. These questionnaires provide an assessment o f
+students’ depression, perceived stress, ﬂourishing (i.e. , self-
+perceived success) and loneliness. Students complete surv eys
+using SurveyMonkey [6] one day prior to study commence-
+ment, and complete them again one day after the study. Sur-
+veys are administered on the phone and stored in the Stu-
+dentLife cloud (Figure 2). In what follows, we overview each
+instrument. The Patient Health Questionnaire (PHQ-9) [26]
+is a depression module that scores each of the 9 DSM-IV
+criteria as 0 (not at all) to 3 (nearly every day). It is vali-
+dated for use in primary care. Table 2 shows the interpre-
+tation of the scale and the number of students that fall into
+each category for pre-post assessment. The perceived stres s
+scale (PSS) [17] measures the degree to which situations in
+a person’s life are stressful. Psychological stress is the e x-
+tent to which a person perceives the demands on them exceed
+their ability to cope [17]. Perceived stress is scored betwe en
+0 (least stressed) to 40 (most stressed). The perceived stre ss
+scale can only be used for comparisons within a sample – in
+our case 48 students. The ﬂourishing scale [19] is an 8-item
+summary measure of a person’s self-perceived success in im-
+portant areas such as relationships, self-esteem, purpose , and
+optimism. The scale provides a single psychological well-
+being score. Flourishing is scored between 8 (lowest) to 56
+(highest). A high score represents a person with many psy-
+chological resources and strengths. The ﬁnal survey we ad-
+minister is the UCLA loneliness (version 3) [36] scale, whic h
+
+Table 3. Correlations between automatic sensor data and PHQ -9 de-
+pression scale.
+automatic sensing data r p-value
+sleep duration (pre) -0.360 0.025
+sleep duration (post) -0.382 0.020
+conversation frequency during day (pre) -0.403 0.010
+conversation frequency during day (post) -0.387 0.016
+conversation frequency during evening (post) -0.345 0.034
+conversation duration during day (post) -0.328 0.044
+number of co-locations (post) -0.362 0.025
+is scored between 20 (least lonely) to 80 (most lonely). The
+loneliness scale is a 20-item scale designed to measure a per -
+son’s subjective feelings of loneliness as well as feelings of
+social isolation. Low scores are considered a normal experi -
+ence of loneliness. Higher scores indicate a person is expe-
+riencing severe loneliness. Table 4 shows the pre-post mea-
+sures (i.e., mean and standard deviation) for each scored su r-
+vey for all students. We discuss these assessments in the Re-
+sults Section.
+Academic Data. We have access to transcripts from the reg-
+istrar’s ofﬁce for all participants as a means to evaluate th eir
+academic performance. We use spring and cumulative GP A
+scores as ground truth outcomes. Undergraduates can receiv e
+an A–E grade or I (incomplete). Students who get an Incom-
+plete must agree to complete the course by a speciﬁc date.
+GP A ranges from 0 to 4. For the CS65 smartphone program-
+ming class we had all the assignment and project deadlines –
+no midterms or ﬁnals are given in this class. Students provid e
+deadlines of their other classes at the exit interview from t heir
+calendars or returned assignments or exams.
+RESULTS
+In what follows, we discuss the main results from the Stu-
+dentLife study. We identify a number of signiﬁcant corre-
+lations between objective sensor data from smartphones and
+mental well-being and academic performance outcomes. We
+also identify a Dartmouth term lifecycle that captures the i m-
+pact of the term on behavioral measures representing an ag-
+gregate term signature experienced by all students.
+Correlation with Mental Health
+We ﬁrst consider correlations between automatic and objec-
+tive sensing data from smartphones and mental well-being.
+We also discuss results from correlations between EMA data.
+Speciﬁcally, we report on a number of signiﬁcant correla-
+tions between sensor and EMA data and pre-post survey
+ground truth outcomes for depression (PHQ-9), ﬂourishing,
+perceived stress, and loneliness scales, as discussed in th e
+Dataset Section and shown in Table 4. We calculate the de-
+gree of correlation between sensing/EMA data and outcomes
+using the Pearson correlation [16] where r (−1 ≤ r ≤ 1)
+indicates the strength and direction of the correlation, an d p
+the signiﬁcance of the ﬁnding.
+PHQ-9 Depression Scale. Table 2 shows the pre-post
+PHQ-9 depression severity for the group of students in the
+study. The majority of students experience minimal or minor
+depression for pre-post measures. However, 6 students ex-
+perience moderate depression and 2 students are moderately
+Table 4. Statistics of mental well-being surveys.
+survey pre-study post-study
+outcomes participants mean std participants mean std
+depression 40 5.8 4.9 38 6.3 5.8
+ﬂourishing 40 42.6 7.9 37 42.8 8.9
+stress 41 18.4 6.8 39 18.9 7.1
+loneliness 40 40.5 10.9 37 40.9 10.5
+Table 5. Correlations between automatic sensor data and ﬂou rishing
+scale.
+automatic sensing data r p-value
+conversation duration (pre) 0.294 0.066
+conversation duration during evening (pre) 0.362 0.022
+number of co-locations (post) 0.324 0.050
+severe or severely depressed at the start of term. At the end o f
+term more students (4) experience either moderately severe
+or severely depressed symptoms. We ﬁnd a number of sig-
+niﬁcant correlations ( p ≤ 0.05) between sleep duration, con-
+versation frequency and duration, colocation (i.e., numbe r of
+Bluetooth encounters) and PHQ-9 depression, as shown Ta-
+ble 3. An inability to sleep is one of the key signs of clinical
+depression [2]. We ﬁnd a signiﬁcant negative correlation be -
+tween sleep duration and pre ( r = −0.360, p = 0 .025) and
+post ( r = −0.382, p = 0 .020) depression; that is, students
+that sleep less are more likely to be depressed. There is a
+known link between lack of sleep and depression. One of
+the common signs of depression is insomnia or an inability to
+sleep [2]. Our ﬁndings are inline with these studies on de-
+pression [2]. However, we are the ﬁrst to use automatic sen-
+sor data from smartphones to conﬁrm these ﬁndings. We also
+ﬁnd a signiﬁcant negative association between conversatio n
+frequency during the day epoch and pre ( r = −0.403, p =
+0.010) and post ( r = −0.387, p = 0 .016) depression. This
+also holds for the evening epoch where we ﬁnd a strong re-
+lationship ( r = −0.345, p = 0 .034) between conversation
+frequency and depression score. These results indicate tha t
+students that have fewer conversational interactions are m ore
+likely to be depressed. For conversation duration, we ﬁnd a
+negative association (r = −0.328, p = 0.044) during the day
+epoch with depression. This suggests students who interact
+less during the day period when they are typically social and
+studying are more likely to experience depressive symptoms .
+In addition, students that have fewer co-locations with oth er
+people are more likely ( r = −0.362, p = 0 .025) to have a
+higher PHQ-9 score. Finally, we ﬁnd a signiﬁcant positive
+correlation ( r = 0 .412, p = 0 .010) between the validated
+single item stress EMA [38] and the post PHQ-9 scale. This
+indicates that people that are stressed are also more likely to
+experience depressive symptoms, as shown in Table 8.
+Flourishing Scale. There are no literal interpretation of
+ﬂourishing scale, perceived stress scale (PSS) and UCLA
+loneliness scale instruments, as discussed in the Dataset S ec-
+tion. Simply put, however, the higher the score the more
+ﬂourishing, stressed and lonely a person is. We ﬁnd a small
+set of correlations (see Table 5) between sensor data and
+ﬂourishing. Conversation duration has a weak positive as-
+sociation ( r = 0 .294, p = 0 .066) during the 24 hour day
+with ﬂourishing. With regard to conversation during the
+evening epoch we ﬁnd a signiﬁcant positive association ( r =
+0.362, p = 0.022) with ﬂourishing. We also ﬁnd that students
+
+Table 6. Correlations between automatic sensor data and per ceived
+stress scale (PSS).
+automatic sensing data r p-value
+conversation duration (post) -0.357 0.026
+conversation frequency (post) -0.394 0.013
+conversation duration during day (post) -0.401 0.011
+conversation frequency during day (pre) -0.524 0.001
+conversation frequency during evening (pre) -0.386 0.015
+sleep duration (pre) -0.355 0.024
+Table 7. Correlations between automatic sensor data and lon eliness
+scale.
+automatic sensing data r p-value
+activity duration (post) -0.388 0.018
+activity duration for day (post) -0.326 0.049
+activity duration for evening (post) -0.464 0.004
+traveled distance (post) -0.338 0.044
+traveled distance for day (post) -0.336 0.042
+indoor mobility for day (post) -0.332 0.045
+with more co-locations ( r = 0 .324, p = 0 .050) are more
+ﬂourishing. These results suggest that students that are mo re
+social and around people are more ﬂourishing. Finally, posi -
+tive affect computed from the P AM self-report has signiﬁcant
+positive correlation ( r = 0 .470, p = 0 .002) with ﬂourishing,
+as shown in Table 8. This is as we would imagine. People
+who have good positive affect ﬂourish.
+Perceived Stress Scale. Table 6 shows the correlations
+between sensor data and perceived stress scale (PSS). Con-
+versation frequency ( r = −0.394, p = 0 .013) and duration
+(r = −0.357, p = 0.026) show signiﬁcantly negative correla-
+tion with post perceived stress. In addiction, we see more si g-
+niﬁcant negative associations if we just look at the day epoc h.
+Here, conversation frequency ( r = −0.524, p = 0 .001) and
+duration ( r = −0.401, p = 0 .011) exhibit signiﬁcant and
+strong negative correlations with pre and post measure of
+perceived stress, respectively. This suggests students in the
+proximity of more frequent and longer conversations dur-
+ing the day epoch are less likely to feel stressed. We can-
+not distinguish between social and work study conversation ,
+however. We hypothesize that students work collaborative i n
+study groups. And these students make more progress and
+are less stressed. There is also strong evidence that studen ts
+that are around more conversations in the evening epoch are
+less stressed too. Speciﬁcally, there is strong negative re la-
+tionship (r = −0.386, p = 0 .015) between conversation fre-
+quency in the evening epoch and stress. There is also a link
+between sleep duration and stress. Our results show that the re
+is a strong negative association ( r = −0.355, p = 0 .024) be-
+tween sleep duration and perceived stress. Students that ar e
+getting more sleep experience less stress. Finally, we ﬁnd sig-
+niﬁcant positive ( r = 0 .458, p = 0 .003) and negative corre-
+lations (r = −0.387, p = 0.012) between self-reported stress
+levels and positive affect (i.e., P AM), respectively, and t he
+perceived stress scale. There is a strong connection betwee n
+daily reports of stress over the term and the pre-post perceived
+stress scale, as shown in Table 8. Similarly, students that r e-
+port higher positive affect tend to be less stressed.
+Loneliness Scale. We ﬁnd a number of links between ac-
+tivity duration, distance travelled, indoor mobility and t he
+Table 8. Correlations between EMA data and mental well-bein g out-
+comes.
+mental health outcomes EMA r p-value
+ﬂourishing scale (pre) positive affect 0.470 0.002
+loneliness (post) positive affect -0.390 0.020
+loneliness (post) stress 0.344 0.037
+PHQ-9 (post) stress 0.412 0.010
+perceived stress scale (pre) positive affect -0.387 0.012
+perceived stress scale (post) positive affect -0.373 0.019
+perceived stress scale (pre) stress 0.458 0.003
+perceived stress scale (post) stress 0.412 0.009
+Table 9. Correlations between automatic sensing data and academic per-
+formance.
+academic Sensing Data r p-valueperformance
+spring GPA conversation duration (day) 0.356 0.033
+spring GPA conversation frequency (day) 0.334 0.046
+spring GPA indoor mobility -0.361 0.031
+spring GPA indoor mobility during (day) -0.352 0.036
+spring GPA indoor mobility during (night) -0.359 0.032
+overall GPA activity duration -0.360 0.030
+overall GPA activity duration std deviation -0.479 0.004
+overall GPA indoor mobility -0.413 0.014
+overall GPA indoor mobility during (day) -0.376 0.026
+overall GPA indoor mobility during (night) -0.508 0.002
+overall GPA number of co-locations 0.447 0.013
+loneliness scale, as shown in Table 7. All our results re-
+late to correlations with post measures. Activity duration
+during a 24 hour day has a signiﬁcant negative association
+(r = −0.388, p = 0 .018) with loneliness. We can look at
+the day and evening epochs and ﬁnd correlations. There is a
+negative correlation ( r = −0.464, p = 0 .004) between ac-
+tivity duration in the evening epoch and loneliness. Distan ce
+traveled during the complete day ( r = −0.338, p = 0 .044)
+and the day epoch ( r = −0.336, p = 0 .042) show trends
+with being lonely. Indoor mobility during the day epoch has
+strong negative links ( r = −0.332, p = 0 .045) to loneliness.
+Indoor mobility is a measure of how much a student is mov-
+ing in buildings during the day epoch. Students that are less
+active and therefore less mobile are more likely to be lonely .
+It is difﬁcult to speculate about cause and effect. Maybe the se
+students move around less are more isolated (e.g., stay in their
+dorm) because they have less opportunity to meet other stu-
+dents outside of class. These students could feel lonely and
+therefore more resigned not to seek out the company of oth-
+ers. There is also no evidence that people who interact with
+others regularly do not experience loneliness. This suppor ts
+our lack of ﬁndings between conversation and loneliness. The
+P AM EMA data (positive affect) has a strong negative associ-
+ation (r=−0.390, p = 0.020) with positive affect. In addition,
+stress self-reports positively correlate (r = 0.344, p = 0.037)
+with loneliness. Students who report higher positive affec t
+and less stress tend to report less loneliness, as shown in Ta -
+ble 8.
+Correlation with Academic Performance
+We examine correlations between sensing and EMA data and
+academic performance. We also discuss how the use of an on-
+line educational tool ( i.e., Piazza) correlates with educational
+performance. Piazza is a popular tool for students and in-
+structors. It offers a question and answer environment alon g
+with key features for effective student collaboration. We u sed
+
+Piazza in the smartphone programming class. We use stu-
+dent’s cumulative GP A and spring GP A scores as the measure
+of academic performance. The mean and standard deviations
+for overall ( i.e., cumulative) and spring GP A are (3.5, 0.38)
+and (3.2, 1.0), respectively.
+Table 9 shows a set of correlations between automatic sen-
+sor data and academic performance. We ﬁnd conversa-
+tion and indoor mobility of students have strong relationsh ip
+with academic performance for spring GP A. More speciﬁ-
+cally, we ﬁnd conversation duration (r= 0.356, p = 0 .033)
+and frequency (r= 0.334, p = 0 .046) during the day epoch
+show a positive correlation with spring GP A. Spring GP A
+is negatively related to indoor mobility across the complet e
+day ( r = −0.361, p = 0 .031), and during the day ( r =
+−0.352, p = 0 .036) and night ( r = −0.359, p = 0 .032)
+epochs. We also ﬁnd links between these measures and cumu-
+lative GP A, implying, sensor data collected during the spri ng
+term is associated with overall college performance. Speci f-
+ically, activity duration ( r = −0.360, p = 0 .030) and its
+standard deviation ( r = −0.479, p = 0 .004) is negatively
+associated with cumulative GP A performance. Cumulative
+GP A is negatively related indoor mobility across the com-
+plete day ( r = −0.413, p = 0 .014), and during the day
+(r = −0.376, p = 0.026) and night ( r = −0.508, p = 0.002)
+epochs. Interestingly, cumulative and spring GP A have sim-
+ilar relationships with the same measures. However, the cor -
+relations are more signiﬁcant for cumulative GP A. There is a
+signiﬁcant positive connection ( r = 0 .447, p = 0 .013) be-
+tween co-location and cumulative GP A; however this is not
+found in spring GP A data. There is no prior work to the best
+of our knowledge on studying the relationship between ob-
+jective sensor data and academic performance. Our results
+indicate that students who are around more conservation do
+better academically. These conversations could be social o r
+study based – it is not clear. The indoor mobility results in-
+dicate that students who move around less while in campus
+buildings (e.g., library, cafes, dorms) do better educatio nally.
+Finally, we present analytics from using the Piazza site for
+the CS65 Smartphone Programming class. All students used
+Piazza to a great or lesser degree during the term. Piazza
+acts as a bulletin board for class announcements but impor-
+tantly it provides a forum for students to help each other
+collaboratively solve programming problems; that is, stu-
+dents can post questions and others can respond. Piazza was
+used heavily during the class. On average, students spent
+43.21 days online, viewed 213.4 posts, posted 10.1 posts, an d
+asked/answered 3.57/1 questions. We ﬁnd intuitive associ-
+ations between student usage patterns and their ﬁnal grade
+in the smartphone programming class. We analyzed usage
+data for the 48 students in the study. We ﬁnd that students
+who are actively using the Piazza to read, post and respond
+to questions do better academically in the smartphone pro-
+gramming class. More speciﬁcally, the number of posts has
+a strong positive correlation with their grade in the class
+(r = 0.32, p = 0.039).
+Dartmouth Term Lifecycle
+We analyze the Dartmouth term lifecycle using both sensing
+data and self-reported EMA data. Figure 5(a-c) shows key
+behavioral measures and activities over the complete term.
+Figure 5(a) shows EMA data for stress and positive affect
+(P A), and automatic sensing data for sleep duration. Fig-
+ure 5(b) shows continuous sensing trends speciﬁcally activ ity
+duration, and conversation duration and frequency. Finall y,
+Figure 5(c) shows location based data from GPS and WiFi,
+speciﬁcally, attendance across all classes, the amount of t ime
+students spent in their dorms or at home, and visits to the
+gym. We hypothesize that these sensing, EMA and location
+based curves collectively represent a “Dartmouth term life cy-
+cle”. Whether these trends could be observed across a dif-
+ferent set of students at Dartmouth or more interestingly at a
+different institution is future work. In what follow we disc uss
+workload across the term, mental well-being using EMA data
+(i.e., stress and positive affect) and automatic sensing da ta
+measures.
+Academic Workload. We use the number of assignment
+deadlines as a measure of the academic workload of students.
+We collect class deadlines during exit interviews and valid ate
+them against students’ calendars and returned assignments
+dates. Figure 5 shows the average number of deadlines for
+all student across each week of the term. The number of
+deadlines peaks during the mid-term period in weeks 4 and
+5. Interestingly, many classes taken by the students do not
+have assignment deadlines during week 8. Final projects and
+assignments are due in the last week of term before ﬁnals, as
+shown in Figure 5(a). As discussed before, all study partic-
+ipants take the same CS65 Smartphone Programming class,
+for which they share the same deadlines. Among all CS65’s
+lab assignment, Lab 4 is considered to be the most challeng-
+ing programming assignment. In the last week of term the
+students need to give ﬁnal presentations and live demos of
+group projects for the smartphone programming class. The
+students are told that app developed for the demo day has to
+work to be graded. The demo is worth 30% of their overall
+grade.
+Self Reported Stress and Mood. Figure 5(a) shows the
+average daily stress level and positive affect over the term for
+all subjects as polynomial curves. Students are more stress ed
+during the mid-term (days 22-36) and ﬁnals periods. The pos-
+itive affect results show a similar trend. Students start th e
+term with high positive affect, which then gradually drops a s
+the term progresses. During the last week of term, students
+may be stressed because of ﬁnals and class projects, with pos -
+itive affect dropping to its lowest point in the term. Overal l,
+the results indicate that the 10-week term is stressful for s tu-
+dents as workload increases. Figure 5(a) clearly shows that
+students return to Dartmouth after spring break feeling the
+most positive about themselves, the least stressed, the mos t
+social in terms of conversation duration and the most active
+(as shown in Figure 5(b)). As the term progresses toward
+mid-term week, positive affect and activity duration plung e
+and remain at low levels until the ﬁnal weeks where positive
+affect drops to its lowest point.
+Automatic Sensing Data. We also study behavioral pat-
+terns over the term by analyzing automatic sensing data. We
+
+0.1
+0.12
+0.14
+0.16
+1 8 15 22 29 36 43 50 57 64
+1 2 3 4 5 6 7 8 9 10
+Normalized ratio
+Day
+Week
+midterm
+deadlines
+positive affect
+sleep duration
+stress
+(a) EMA and sleep data
+0.1
+0.12
+0.14
+0.16
+1 8 15 22 29 36 43 50 57 64
+1 2 3 4 5 6 7 8 9 10
+Normalized ratio
+Day
+Week
+midterm
+deadlines
+activity duration
+conv. duration
+conv. freq.
+(b) Automatic sensing data
+0.1
+0.12
+0.14
+0.16
+1 8 15 22 29 36 43 50 57 64
+1 2 3 4 5 6 7 8 9 10
+Normalized ratio
+Day
+Week
+midterm
+deadlines
+in-dorm duration
+class attendance
+gym visits
+(c) Location-based data
+Figure 5. Dartmouth term lifecycle: collective behavioral trends for all students over the term.
+plot the polynomial ﬁtting curves for sleep duration, activ -
+ity duration, conversation duration, conversation freque ncy,
+as shown Figure 5(b), and location visiting patterns in Fig-
+ure 5(c). Our key ﬁndings are as follows. We observe from
+Figure 5(a) that sleep peaks at the end of the ﬁrst week and
+then drops off and is at its lowest during the mid-term exam
+weeks. Sleep then improves until the last week of term when
+it plummets to its lowest point in the cycle. As shown in
+Figure 5(b) students start the term with larger activity du-
+ration, which gradually drops as they become busier with
+course work and other term activities. Finally, the activit y
+duration increases a little toward the end of term. Activity
+duration reaches its lowest point on day 36 when students are
+focused on completing the Lab 4 assignment – considered the
+most demanding assignment in the smartphone programming
+class.
+The student’s level of face-to-face sociability starts hig h at the
+start of term, then we observe an interesting conservation p at-
+tern, as shown in Figure 5(b). As the term intensiﬁes, conver -
+sation duration drops almost linearly until week 8, and then
+rebounds to its highest point at the end of term. Conversely,
+the frequency of conservation increases from the start of te rm
+until the start of midterms, and then it drops and recovers to -
+ward the end of term. We speculate that sociability changes
+from long social/study related interactions at the start of term
+to more business-like interactions during midterms when st u-
+dents have shorter conservations. At the end of term, studen ts
+are having more frequent, longer conversations.
+Figure 5(c) provides a number of interesting insights based
+on location based data. As the term progresses and dead-
+lines mount the time students spend at the signiﬁcant places
+in their lives radically changes. Visits to the gym plummet
+during midterm and never rebound. The time students spend
+in their dorm is low at the start of term perhaps due to social-
+izing then remains stable but drops during midterm. At week
+8 time spent in dorms drops off and remains low until the end
+of term. The most interesting curve is class attendance. We
+use location data to determine if students attend classes. W e
+consider 100% attendance when all students attend all class es
+and x-hours (if they exist). The term starts with 75% atten-
+dances and starts dropping at week 3. It steadily declines to a
+point at the end of term were only 25% of the class are attend-
+ing all their classes. Interestingly, we ﬁnd no correlation be-
+tween class attendance and academic performance. We spec-
+ulate that students increasingly start missing classes as t he
+term progresses and the work load rises. However, absence
+does not positively or negatively impact their grades. We pu t
+this down to their self learning ability but plan to study thi s
+further as part of future work.
+It is difﬁcult in this study to be concrete about the cause and
+effect of this lifecycle. For example, stress or positive af -
+fect could have nothing to do with workload and everything
+to do with hardship of some sort ( e.g., campus adjustment,
+roommate conﬂicts, health issues). We speculate the inten-
+sive workload compressed into a 10 week term puts consid-
+erable demands on students. Those that excel academically
+develop skills to effectively manage workload, social life and
+stress levels.
+CONCLUSION
+In this paper, we presented the StudentLife sensing system
+and results from a 10-week deployment. We discuss a num-
+ber of insights into behavioral trends, and importantly, co rre-
+lations between objective sensor data from smartphones and
+mental well-being and academic performance for a set of
+students at Dartmouth College. To the best of our knowl-
+edge, this is the ﬁrst-of-its-kind smartphone sensing syst em
+and study. A natural question arises: Could we ﬁnd similar
+trends and correlations in a different student body? We are
+currently working on a StudentLife study at the University o f
+Texas Austin for a class with a large number of remote stu-
+dents. University of Texas Austin has semesters rather than
+short terms. We are also planning a future study at North-
+eastern University. Providing feedback of hidden states to
+students and other stakeholders might be beneﬁcial, but the re
+are many privacy issues to resolve. Students, deans, and cli n-
+icians on campus all care about the health and well-being of
+the student body. In this study, the professor running the study
+had access to survey outcomes, sensing data, and EMAs for
+students. In two cases, the professor intervened and did not
+give failing grades to students who failed to complete a num-
+ber of assignments and missed lectures for several weeks.
+Rather, they were given incomplete grades and completed as-
+signments over the summer. However, in other classes these
+students took, their professors did not have such data avail -
+able and these students received failing grades. While ac-
+cess to such data is under IRB and cannot be shared, the data
+and intervention in grading enabled those students to retur n
+to campus the following fall. If they had received 3 failing
+grades, they would have been suspended for one term.
+
+REFERENCES
+1. CS65 Smartphone Programming. http://www.cs.
+dartmouth.edu/~campbell/cs65/cs65.html.
+2. Depression. http://www.nimh.nih.gov/health/
+topics/depression/index.shtml.
+3. funf-open-sensing-framework. https://code.google.
+com/p/funf-open-sensing-framework/ .
+4. PACO. https://code.google.com/p/paco/.
+5. StudentLife Dataset 2014. http://studentlife.cs.
+dartmouth.edu/.
+6. SurveyMonkey. https://www.surveymonkey.com/.
+7. N. Aharony, W. Pan, C. Ip, I. Khayal, and A. Pentland. Socia l
+fMRI: Investigating and shaping social mechanisms in the re al
+world. Pervasive and Mobile Computing, 7(6):643–659, 2011.
+8. C. M. Aldwin. Stress, coping, and development: An integrative
+perspective. Guilford Press, 2007.
+9. S. Bang, M. Kim, S.-K. Song, and S.-J. Park. Toward real tim e
+detection of the basic living activity in home using a wearab le
+sensor and smart home sensors. In Engineering in Medicine
+and Biology Society, 2008. EMBS 2008. 30th Annual
+International Conference of the IEEE , pages 5200–5203.
+IEEE, 2008.
+10. J. E. Bardram, M. Frost, K. Szántó, and G. Marcu. The
+monarca self-assessment system: a persuasive personal
+monitoring system for bipolar patients. In Proceedings of the
+2nd ACM SIGHIT International Health Informatics
+Symposium, pages 21–30. ACM, 2012.
+11. R. J. Bergman, D. R. Bassett Jr, and D. A. Klein. V alidity o f 2
+devices for measuring steps taken by older adults in
+assisted-living facilities. Journal of physical activity & health ,
+5, 2008.
+12. D. M. Bravata, C. Smith-Spangler, V . Sundaram, A. L. Gien ger,
+N. Lin, R. Lewis, C. D. Stave, I. Olkin, and J. R. Sirard. Using
+pedometers to increase physical activity and improve healt h: a
+systematic review. Jama, 298(19):2296–2304, 2007.
+13. M. N. Burns, M. Begale, J. Duffecy, D. Gergle, C. J. Karr,
+E. Giangrande, and D. C. Mohr. Harnessing context sensing to
+develop a mobile intervention for depression. Journal of
+medical Internet research, 13(3), 2011.
+14. Z. Chen, M. Lin, F. Chen, N. D. Lane, G. Cardone, R. Wang,
+T. Li, Y . Chen, T. Choudhury, and A. T. Campbell. Unobtrusive
+sleep monitoring using smartphones. In Proc. of
+PervasiveHealth, 2013.
+15. T. Choudhury, S. Consolvo, B. Harrison, J. Hightower,
+A. LaMarca, L. LeGrand, A. Rahimi, A. Rea, G. Bordello,
+B. Hemingway, et al. The mobile sensing platform: An
+embedded activity recognition system. Pervasive Computing,
+IEEE, 7(2):32–41, 2008.
+16. J. Cohen. Statistical power analysis for the behavioral
+sciencies. Routledge, 1988.
+17. S. Cohen, T. Kamarck, and R. Mermelstein. A global measur e
+of perceived stress. Journal of health and social behavior ,
+pages 385–396, 1983.
+18. R. Cowie and E. Douglas-Cowie. Automatic statistical an alysis
+of the signal and prosodic signs of emotion in speech. In
+Spoken Language, 1996. ICSLP 96. Proceedings., F ourth
+International Conference on, volume 3, pages 1989–1992.
+IEEE, 1996.
+19. E. Diener, D. Wirtz, W. Tov, C. Kim-Prieto, D.-w. Choi,
+S. Oishi, and R. Biswas-Diener. New well-being measures:
+Short scales to assess ﬂourishing and positive and negative
+feelings. Social Indicators Research, 97(2):143–156, 2010.
+20. N. Eagle and A. Pentland. Reality mining: sensing comple x
+social systems. Personal and ubiquitous computing,
+10(4):255–268, 2006.
+21. D. J. France, R. G. Shiavi, S. Silverman, M. Silverman, an d
+D. M. Wilkes. Acoustical properties of speech as indicators of
+depression and suicidal risk. Biomedical Engineering, IEEE
+Transactions on, 47(7):829–837, 2000.
+22. M. Frost, A. Doryab, M. Faurholt-Jepsen, L. V . Kessing, a nd
+J. E. Bardram. Supporting disease insight through data
+analysis: reﬁnements of the monarca self-assessment syste m.
+In Proceedings of the 2013 ACM international joint conference
+on Pervasive and ubiquitous computing , pages 133–142. ACM,
+2013.
+23. G. Hawthorne. Measuring social isolation in older adult s:
+development and initial validation of the friendship scale .
+Social Indicators Research, 77(3):521–548, 2006.
+24. J. Kasckow, S. Zickmund, A. Rotondi, A. Mrkva, J. Gurklis ,
+M. Chinman, L. Fox, M. Loganathan, B. Hanusa, and G. Haas.
+Development of telehealth dialogues for monitoring suicid al
+patients with schizophrenia: Consumer feedback. Community
+mental health journal, pages 1–4, 2013.
+25. L. J. Kirmayer, J. M. Robbins, M. Dworkind, and M. J. Yaffe .
+Somatization and the recognition of depression and anxiety in
+primary care. The American journal of psychiatry , 1993.
+26. K. Kroenke, R. L. Spitzer, and J. B. Williams. The phq-9.
+Journal of general internal medicine , 16(9):606–613, 2001.
+27. N. D. Lane, M. Mohammod, M. Lin, X. Yang, H. Lu, S. Ali,
+A. Doryab, E. Berke, T. Choudhury, and A. Campbell. Bewell:
+A smartphone application to monitor, model and promote
+wellbeing. In Proc. of PervasiveHealth, 2011.
+28. H. Lu, D. Frauendorfer, M. Rabbi, M. S. Mast, G. T.
+Chittaranjan, A. T. Campbell, D. Gatica-Perez, and
+T. Choudhury. Stresssense: Detecting stress in unconstrai ned
+acoustic environments using smartphones. In Proceedings of
+the 2012 ACM Conference on Ubiquitous Computing , pages
+351–360. ACM, 2012.
+29. H. Lu, J. Yang, Z. Liu, N. D. Lane, T. Choudhury, and A. T.
+Campbell. The jigsaw continuous sensing engine for mobile
+phone applications. In Proc. of SenSys, 2010.
+30. A. Madan, M. Cebrian, D. Lazer, and A. Pentland. Social
+sensing for epidemiological behavior change. In Proceedings
+of the 12th ACM international conference on Ubiquitous
+computing, pages 291–300. ACM, 2010.
+31. E. Miluzzo, N. D. Lane, K. Fodor, R. Peterson, H. Lu,
+M. Musolesi, S. B. Eisenman, X. Zheng, and A. T. Campbell.
+Sensing meets mobile social networks: the design,
+implementation and evaluation of the CenceMe application. In
+Proc. of SenSys, 2008.
+32. J. P . Pollak, P . Adams, and G. Gay. PAM: a photographic affect
+meter for frequent, in situ measurement of affect. In Proc. of
+SIGCHI, 2011.
+33. A. Puiatti, S. Mudda, S. Giordano, and O. Mayora.
+Smartphone-centred wearable sensors network for monitori ng
+patients with bipolar disorder. In Proc. of EMBC, 2011.
+34. M. Rabbi, S. Ali, T. Choudhury, and E. Berke. Passive and
+in-situ assessment of mental and physical well-being using
+mobile sensors. In Proc. of UbiComp, 2011.
+35. K. K. Rachuri, M. Musolesi, C. Mascolo, P . J. Rentfrow,
+C. Longworth, and A. Aucinas. Emotionsense: a mobile
+phones based adaptive platform for experimental social
+psychology research. In Proceedings of the 12th ACM
+international conference on Ubiquitous computing , pages
+281–290, 2010.
+36. D. W. Russell. UCLA loneliness scale (version 3): Reliab ility,
+validity, and factor structure. Journal of personality
+assessment, 66(1):20–40, 1996.
+37. S. Shiffman, A. A. Stone, and M. R. Hufford. Ecological
+momentary assessment. Annu. Rev. Clin. Psychol., 4:1–32,
+2008.
+
+38. S. E. Taylor, W. T. Welch, H. S. Kim, and D. K. Sherman.
+Cultural differences in the impact of social support on
+psychological and biological stress responses. Psychological
+Science, 18(9):831–837, 2007.
+39. M. T. Trockel, M. D. Barnes, and D. L. Egget. Health-relat ed
+variables and academic performance among ﬁrst-year colleg e
+students: Implications for sleep and other behaviors. Journal of
+American college health, 49(3):125–131, 2000.
+40. C. Tudor-Locke, S. B. Sisson, T. Collova, S. M. Lee, and P . D.
+Swan. Pedometer-determined step count guidelines for
+classifying walking intensity in a young ostensibly health y
+population. Canadian Journal of Applied Physiology ,
+30(6):666–676, 2005.
+41. J.-i. Watanabe, S. Matsuda, and K. Yano. Using wearable
+sensor badges to improve scholastic performance. In
+Proceedings of the 2013 ACM conference on Pervasive and
+ubiquitous computing adjunct publication , pages 139–142.
+ACM, 2013.
+42. J.-I. Watanabe, K. Yano, and S. Matsuda. Relationship be tween
+physical behaviors of students and their scholastic
+performance. In Ubiquitous Intelligence and Computing, 2013
+IEEE 10th International Conference on and 10th Internation al
+Conference on Autonomic and Trusted Computing (UIC/ATC) ,
+pages 170–177. IEEE, 2013.
+43. D. Watson, L. A. Clark, and A. Tellegen. Development and
+validation of brief measures of positive and negative affec t: the
+panas scales. Journal of personality and social psychology ,
+54(6):1063, 1988.
+

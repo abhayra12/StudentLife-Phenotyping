@@ -1,6 +1,13 @@
 # Learning Plan (keep private)
 plan.md
 
+# Config files (keep private)
+.agents.md
+.rules.md
+.preferences.md
+.commands.md
+WHILE_DOWNLOADING.md
+
 # Legacy requirements (keeping for reference)
 # requirements.txt is now replaced by pyproject.toml + uv.lock
 
