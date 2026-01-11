@@ -1,0 +1,35 @@
+[project]
+name = "studntlife-pheno"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "catboost>=1.2.8",
+    "fastapi>=0.128.0",
+    "joblib>=1.5.3",
+    "lightgbm>=4.6.0",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.1",
+    "optuna>=4.6.0",
+    "pandas>=2.3.3",
+    "plotly>=6.5.1",
+    "pydantic>=2.12.5",
+    "python-dotenv>=1.2.1",
+    "pyyaml>=6.0.3",
+    "scikit-learn>=1.8.0",
+    "scipy>=1.17.0",
+    "seaborn>=0.13.2",
+    "statsmodels>=0.14.6",
+    "torch>=2.9.1",
+    "tqdm>=4.67.1",
+    "uvicorn>=0.40.0",
+    "xgboost>=3.1.3",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.1.0",
+    "jupyter>=1.1.1",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+]
