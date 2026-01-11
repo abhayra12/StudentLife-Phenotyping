@@ -247,6 +247,27 @@ _(To be added)_
 
 **Alternative Considered**: Manual conflict resolution (rejected - more error-prone for simple preference to keep local files)
 
+### Decision 4: Data Scope Change - Sensing Only
+**Date**: 2026-01-11 22:15  
+**Context**: Need to clarify project scope and data sources to use  
+**Decision**: Use **ONLY** the `data/raw/dataset/sensing/` folder containing 10 passive sensor types:
+- activity, audio, bluetooth, conversation, dark, gps, phonecharge, phonelock, wifi, wifi_location
+- **Exclude**: EMA responses (self-reported stress/mood), surveys (PHQ-9, personality), education data (GPA, Piazza)
+
+**Impact**: 
+- Shifts approach from **supervised learning** (predicting depression/stress) to **unsupervised learning** (behavioral clustering, anomaly detection)
+- Cannot directly predict mental health outcomes without survey labels
+- Focus on behavioral analytics, pattern mining, and feature extraction
+- Can still do self-supervised learning (predict next-day behavior from sensors)
+
+**Rationale**: 
+- Sensing data is cleanest and most reliable
+- Passive data avoids self-report bias
+- Builds foundation for future supervised work when labels become available
+- Focuses on objective behavioral patterns vs subjective ratings
+
+**Alternative Considered**: Use EMA/survey data (rejected for this phase - want to prove value of passive sensing alone)
+
 
 ---
 
@@ -516,9 +537,15 @@ uv sync  # Installs from uv.lock
 
 ## 🎯 Current Focus
 
-**Current Task**: Task 1.3 - Download and Organize Dataset  
-**Next Task**: Task 2.1 - Exploratory Data Analysis  
-**Status**: 🔄 **TASK 1.3 IN PROGRESS** (Dataset downloading)
+**Current Task**: Task 1.3 - Download and Organize Sensing Data  
+**Next Task**: Task 2.1 - Sensing Data EDA  
+**Status**: 🔄 **REPLANNING COMPLETE** - Ready to extract sensing data
+
+**Major Change** (2026-01-11 22:15):
+- 🔄 **Scope changed to sensing-only data** (10 sensor types)
+- 🔄 Approach shifted from supervised to unsupervised learning
+- 🔄 Updated all documentation: plan.md, README.md, CURRENT_TASK.md
+- 🔄 Focus: Behavioral clustering, anomaly detection, pattern analysis
 
 **Recent Accomplishments** (2026-01-11):
 - ✅ Added upstream remote repository to git
@@ -526,6 +553,7 @@ uv sync  # Installs from uv.lock
 - ✅ Configured git to exclude private config files (.agents.md, .rules.md, etc.)
 - ✅ Removed CURRENT_TASK.md from git tracking (added to .gitignore)
 - ✅ Prepared comprehensive project overview for mentor call
+- ✅ Replanned entire project for sensing-only approach
 
 **What Was Previously Accomplished**:
 - ✅ Modern uv workflow with pyproject.toml + uv.lock
@@ -536,8 +564,9 @@ uv sync  # Installs from uv.lock
 - ✅ Pushed to upstream: https://github.com/abhayra12/StudentLife-Phenotyping.git
 
 **Current Work**:
-- 🔄 Downloading StudentLife dataset (53 GB)
-- 📝 Researched dataset structure and features from paper
+- 🔄 Extracting ONLY sensing folder from dataset (passive sensors only)
+- 📝 Researched dataset structure - identified 10 sensor types available
+- 📋 Replanned project approach for unsupervised learning
 
 **Next Steps**:
 1. Complete dataset download and extraction

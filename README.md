@@ -2,22 +2,25 @@
 
 ## 📖 Project Overview
 
-This project develops a machine learning system for digital phenotyping using the StudentLife dataset from Dartmouth College. The goal is to predict student mental health states, stress levels, and academic performance from smartphone sensor data.
+This project develops a machine learning system for digital phenotyping using **passive sensing data only** from the StudentLife dataset from Dartmouth College. The goal is to analyze student behavioral patterns, detect anomalies, and build interpretable behavioral features from smartphone sensor data.
 
-**Dataset**: [StudentLife Dataset](https://studentlife.cs.dartmouth.edu/dataset.html)
+**Important**: This project uses **ONLY sensing data** (passive smartphone sensors), excluding self-reported surveys, EMA responses, and academic records.
+
+**Dataset**: [StudentLife Dataset - Sensing Folder Only](https://studentlife.cs.dartmouth.edu/dataset.html)
 - 48 participants (undergraduate & graduate students)
 - 10 weeks of continuous sensing data (Spring 2013)
-- 53 GB of sensor data
-- 32,000+ self-reports
-- Pre/post psychological surveys
+- 10 sensor types: activity, audio, bluetooth, conversation, dark, gps, phonecharge, phonelock, wifi, wifi_location
+- Focus: Passive behavioral sensing only
 
 ## 🎯 Objectives
 
-1. Predict depression risk from passive smartphone sensing
-2. Forecast stress levels and mood states
-3. Predict academic performance (GPA)
-4. Build interpretable, clinically-relevant models
-5. Deploy as a production-ready API service
+1. **Behavioral Clustering**: Group students by similar behavioral patterns
+2. **Anomaly Detection**: Identify unusual behavioral changes over time
+3. **Activity & Sleep Analysis**: Extract physical activity and sleep patterns
+4. **Social Engagement Metrics**: Analyze conversation and co-location patterns
+5. **Term Lifecycle Analysis**: How behavior changes over 10-week academic term
+6. **Feature Extraction**: Build comprehensive digital phenotyping features
+7. **Deploy API**: Production-ready behavioral analytics service
 
 ## 🛠️ Tech Stack
 
