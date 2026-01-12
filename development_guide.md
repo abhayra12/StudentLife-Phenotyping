@@ -126,6 +126,7 @@ See [ISSUES_LOG.md](ISSUES_LOG.md) for a history of common issues and solutions.
 
 ### Phase 4: Feature Engineering (Jan 2026)
 - **Task 4.1**: Implemented temporal feature engineering (cyclical time, day parts).
+- **Task 4.2**: Implemented activity and sleep feature engineering (heuristics).
 
 ### Phase 2: Data Acquisition & EDA (Jan 2026)
 - **Task 2.4**: Validated term lifecycle trends.
