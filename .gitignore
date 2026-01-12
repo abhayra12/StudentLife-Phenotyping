@@ -11,6 +11,7 @@ TASK_TRACKING.md
 WHILE_DOWNLOADING.md
 CURRENT_TASK.md
 ML_ZOOMCAMP_COMPARISON.md
+ISSUES_LOG.md
 
 # Legacy requirements (keeping for reference)
 # requirements.txt is now replaced by pyproject.toml + uv.lock
