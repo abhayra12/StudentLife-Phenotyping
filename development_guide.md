@@ -537,8 +537,8 @@ uv sync  # Installs from uv.lock
 
 ## 🎯 Current Focus
 
-**Current Task**: Task 3.2 - Time Alignment  
-**Next Task**: Task 4.1 - Feature Engineering  
+**Current Task**: Task 4.1 - Feature Engineering  
+**Next Task**: Task 4.2 - Behavioral Features  
 **Status**: 🔄 **PHASE 3 IN PROGRESS** - Data Engineering
 
 **Major Change** (2026-01-11 22:15):
@@ -549,9 +549,10 @@ uv sync  # Installs from uv.lock
 
 **Recent Accomplishments** (2026-01-11):
 - ✅ **Phase 2 COMPLETE**: Data Acquisition & EDA (Tasks 2.1-2.4)
+- ✅ **Task 3.1 COMPLETE**: Built data cleaning pipeline & unit tests
+- ✅ **Task 3.2 COMPLETE**: Implemented multi-sensor time alignment
 - ✅ Verified dataset: 49 participants, ~10 weeks, 10 sensors
 - ✅ Created comprehensive EDA notebooks (Sensor Deep Dive, Quality, Term Lifecycle)
-- ✅ **Task 3.1 COMPLETE**: Built data cleaning pipeline & unit tests
 - ✅ Added upstream remote repository to git
 - ✅ Force-pushed local code to upstream (preserving local .gitignore and README)
 - ✅ Configured git to exclude private config files (.agents.md, .rules.md, etc.)
