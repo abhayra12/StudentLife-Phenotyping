@@ -30,6 +30,17 @@ def encode_cyclical_time(df, col_map=None):
             'week_of_term': 10
         }
         
+    # Ensure time components exist
+    if 'timestamp' in df.columns and pd.api.types.is_datetime64_any_dtype(df['timestamp']):
+        if 'hour_of_day' not in df.columns:
+            df['hour_of_day'] = df['timestamp'].dt.hour
+        if 'day_of_week' not in df.columns:
+            df['day_of_week'] = df['timestamp'].dt.dayofweek
+        if 'week_of_term' not in df.columns:
+            # Approx week of term if missing
+            start_date = df['timestamp'].min()
+            df['week_of_term'] = ((df['timestamp'] - start_date).dt.days // 7) + 1
+            
     for col, period in col_map.items():
         if col in df.columns:
             df[f'{col}_sin'] = np.sin(2 * np.pi * df[col] / period)
