@@ -123,14 +123,16 @@ See [ISSUES_LOG.md](ISSUES_LOG.md) for a history of common issues and solutions.
 
 ## 📜 Project History & Timeline
 
-### Phase 6: Advanced Machine Learning (Current)
+### Phase 6: Advanced Machine Learning (Completed - Jan 2026)
+- **Task 6.4**: LSTM Timeseries.
+  - MAE: ~1.18 (Significantly beat XGBoost 1.66).
+  - Validated that sequence models are superior for this dataset.
+- **Task 6.3**: Boosting Comparison (LightGBM/CatBoost).
+  - Metrics comparable to XGBoost (~0.75 AUC).
 - **Task 6.2**: SHAP Analysis.
   - Identified `audio_voice_minutes` (social context) as top driver.
-  - Generated global interpretation plots.
 - **Task 6.1**: Gradient Boosting (XGBoost).
-  - Regression MAE: 1.66 (Beat Baseline 1.80).
-  - Classification AUC: 0.75.
-  - Implemented Optuna Hyperparameter Tuning.
+  - Regression MAE: 1.66. Classification AUC: 0.75.
 
 ### Phase 5: Predictive Modeling (Completed - Jan 2026)
 - **Task 5.3**: Classification Baselines (Logistic Regression vs Random Forest).

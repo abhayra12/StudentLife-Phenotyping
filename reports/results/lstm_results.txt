@@ -1,0 +1,2 @@
+LSTM Best Val MAE: 1.1782
+Baseline XGBoost MAE: 1.66
