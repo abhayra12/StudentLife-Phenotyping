@@ -90,3 +90,5 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+pipeline_logs.txt

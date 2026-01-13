@@ -51,10 +51,16 @@ def validate_timestamps(df: pd.DataFrame, time_col: str = 'timestamp') -> Tuple[
         try:
             # Try converting from unix timestamp (seconds) if numeric
             if np.issubdtype(df[time_col].dtype, np.number):
-                df[time_col] = pd.to_datetime(df[time_col], unit='s')
+                df[time_col] = pd.to_datetime(df[time_col], unit='s', errors='coerce')
             else:
-                df[time_col] = pd.to_datetime(df[time_col])
+                df[time_col] = pd.to_datetime(df[time_col], errors='coerce')
+                
+            # Drop invalid timestamps (NaT)
+            if df[time_col].isna().sum() > 0:
+                df = df.dropna(subset=[time_col])
+
         except Exception as e:
+            # Fallback for re-raising valid errors if not caught by coerce
             raise ValueError(f"Could not convert {time_col} to datetime: {e}")
 
     # Check for duplicates

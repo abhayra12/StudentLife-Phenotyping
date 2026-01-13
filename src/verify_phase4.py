@@ -96,7 +96,7 @@ def verify_phase4():
     # Plot 1: Cyclical Time
     try:
         if 'hour_of_day' in df_plot.columns:
-            sns.scatterplot(data=df_plot.iloc[:24], x='hour_sin', y='hour_cos', hue='hour_of_day', ax=axes[0,0], s=100)
+            sns.scatterplot(data=df_plot.iloc[:24], x='hour_of_day_sin', y='hour_of_day_cos', hue='hour_of_day', ax=axes[0,0], s=100)
             axes[0,0].set_title("Cyclical Hour Encoding")
         else:
             print("Skipping Plot 1: hour_of_day missing")
