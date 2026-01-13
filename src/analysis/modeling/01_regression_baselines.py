@@ -137,6 +137,12 @@ def train_and_evaluate(df):
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     results_df.to_csv(OUTPUT_DIR / 'regression_baselines.csv', index=False)
     
+    # Save Predictions for Deep Dive (Task 5.2)
+    pred_df = pd.DataFrame(predictions)
+    pred_df['y_true'] = y_test.values
+    pred_df.to_csv(OUTPUT_DIR / 'regression_predictions.csv', index=False)
+    print(f"Predictions saved to {OUTPUT_DIR / 'regression_predictions.csv'}")
+    
     print("\n--- Results ---")
     print(results_df.to_string(index=False))
     
