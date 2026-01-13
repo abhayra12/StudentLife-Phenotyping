@@ -41,6 +41,7 @@ def resample_sensor(df: pd.DataFrame, sensor_name: str, time_grid: pd.DatetimeIn
     df = df.copy()
     
     # Standardize timestamp
+    df.columns = df.columns.str.strip()
     time_col = get_timestamp_col(df)
     
     # Convert to datetime if needed
