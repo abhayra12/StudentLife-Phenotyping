@@ -162,6 +162,12 @@ def train_autoencoder():
     out_dir = Path('reports/figures/modeling')
     out_dir.mkdir(parents=True, exist_ok=True)
     
+    # Save Model Weights
+    models_dir = Path('models')
+    models_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(model.state_dict(), models_dir / 'autoencoder.pth')
+    print(f"Model saved to {models_dir / 'autoencoder.pth'}")
+    
     # 1. Error Distribution Plot
     plt.figure(figsize=(10, 6))
     plt.hist(mse_per_sample, bins=50, alpha=0.7, color='blue', label='Normal')
