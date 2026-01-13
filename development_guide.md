@@ -104,10 +104,15 @@ DATA_DIR = 'C:/Users/abhay/project/data'
 - **Docstrings**: Required for all modules and major functions.
 - **Imports**: Group standard lib, third-party, and local imports.
 
-### 3. Notebooks
-- Keep notebooks in `notebooks/`.
-- Do not commit large outputs or heavy plots if possible.
-- Use `sys.path.append('..')` or similar to import from `src/`.
+### 3. Scripts over Notebooks
+> [!IMPORTANT]
+> We use **Python scripts** (`src/analysis/`) for all analysis and modeling to ensure reproducibility and better git integration.
+> 
+> - **EDA**: `src/analysis/eda/*.py`
+> - **Features**: `src/analysis/features/*.py`
+> - **Modeling**: `src/analysis/modeling/*.py`
+> 
+> Run them directly: `python src/analysis/modeling/01_regression_baselines.py`
 
 ---
 
@@ -118,16 +123,17 @@ See [ISSUES_LOG.md](ISSUES_LOG.md) for a history of common issues and solutions.
 
 ## 📜 Project History & Timeline
 
-### Phase 3: Data Engineering (Jan 2026)
-- **Task 3.3**: Created final dataset pipeline (Cleaning -> Alignment -> Split).
-- **Task 3.2**: Implemented multi-sensor time alignment.
-- **Task 3.1**: Built data cleaning pipeline.
-- **Verification**: Removed legacy notebooks with absolute paths.
+### Phase 5: Predictive Modeling (Current)
+- **Task 5.1**: Implemented Regression Baselines (Linear, Ridge).
+  - Achieved R²=0.11 (Ridge) vs Baseline R²=-0.005.
+  - Predicted next-day activity levels.
 
 ### Phase 4: Feature Engineering (Jan 2026)
-- **Task 4.1**: Implemented temporal feature engineering (cyclical time, day parts).
-- **Task 4.2**: Implemented activity and sleep feature engineering (heuristics).
-- **Task 4.3**: Implemented location feature engineering (mobility, clusters).
+- **Task 4.3**: Location & Mobility Features (DBSCAN clusters).
+- **Task 4.2**: Activity & Sleep Features (heuristics).
+- **Task 4.1**: Temporal Features (cyclical encoding).
+- **Refactor**: Converted all notebooks to `src/analysis/` scripts.
+
 
 ### Phase 2: Data Acquisition & EDA (Jan 2026)
 - **Task 2.4**: Validated term lifecycle trends.
