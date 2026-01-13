@@ -50,83 +50,78 @@ This project develops a machine learning system for digital phenotyping using pa
 - Prometheus (monitoring)
 
 ## Project Structure
-
-```
-StudntLife-Pheno/
- data/
-    raw/              # Raw sensing data
-    processed/        # Cleaned and aligned data
-    features/         # Engineered features
- notebooks/
-    02_eda/          # Exploratory data analysis
-    03_preprocessing/ # Data cleaning and alignment
-    04_features/      # Feature engineering
-    05_modeling/      # Baseline ML models
-    06_advanced_ml/   # XGBoost, LightGBM, LSTM
-    07_deep_learning/ # Transformers, Autoencoders
-    08_production/    # API development and deployment
- src/
-    data/            # Data processing modules
-    features/        # Feature engineering
-    models/          # ML model implementations
-    utils/           # Utility functions
- api/                 # FastAPI application
- models/              # Trained model artifacts
- tests/               # Unit and integration tests
- docs/                # Documentation
-```
-
-## Getting Started
-
-### Prerequisites
-- Python 3.13+
-- uv package manager
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/abhayra12/StudentLife-Phenotyping.git
-cd StudentLife-Phenotyping
-```
-
-2. Create virtual environment and install dependencies:
-```bash
-uv venv
-uv sync
-```
-
-3. Activate virtual environment:
-```bash
-# Windows
-.venv\\Scripts\\activate
-
-# Linux/Mac
-source .venv/bin/activate
-```
-
-### Download Dataset
-
-Download the StudentLife dataset (53 GB):
-```bash
-# Download from official source
-wget https://studentlife.cs.dartmouth.edu/dataset/dataset.tar.bz2
-
-# Extract only sensing folder
-tar -xjf dataset.tar.bz2 dataset/sensing/
-mv dataset/sensing data/raw/dataset/sensing
-```
-
-## Development Workflow
-
-1. **Data Exploration**: Start with notebooks in `02_eda/`
-2. **Preprocessing**: Clean and align sensor data
-3. **Feature Engineering**: Create behavioral features from raw sensors
-4. **Modeling**: Train baseline models (clustering, anomaly detection)
-5. **Advanced ML**: XGBoost, LightGBM, LSTM for time series
-6. **Deep Learning**: Transformers, contrastive learning, autoencoders
-7. **Production**: Build FastAPI service, containerize with Docker
-8. **Deploy**: Cloud deployment with federated learning support
+ 
+ ```
+ StudntLife-Pheno/
+  data/
+     raw/              # Raw sensing data
+     processed/        # Cleaned and aligned data
+     features/         # Engineered features
+  src/
+     data/            # Data processing modules
+     features/        # Feature engineering
+     models/          # ML model implementations
+     analysis/        # Analysis scripts (Script-First Workflow)
+         eda/             # Exploratory Analysis
+         modeling/        # ML Training & Evaluation scripts
+     utils/           # Utility functions
+  api/                 # FastAPI application
+  models/              # Trained model artifacts
+  tests/               # Unit and integration tests
+  docs/                # Documentation
+ ```
+ 
+ ## Getting Started
+ 
+ ### Prerequisites
+ - Python 3.13+
+ - uv package manager
+ 
+ ### Installation
+ 
+ 1. Clone the repository:
+ ```bash
+ git clone https://github.com/abhayra12/StudentLife-Phenotyping.git
+ cd StudentLife-Phenotyping
+ ```
+ 
+ 2. Create virtual environment and install dependencies:
+ ```bash
+ uv venv
+ uv sync
+ ```
+ 
+ 3. Activate virtual environment:
+ ```bash
+ # Windows
+ .venv\Scripts\activate
+ 
+ # Linux/Mac
+ source .venv/bin/activate
+ ```
+ 
+ ### Download Dataset
+ 
+ Download the StudentLife dataset (53 GB):
+ ```bash
+ # Download from official source
+ wget https://studentlife.cs.dartmouth.edu/dataset/dataset.tar.bz2
+ 
+ # Extract only sensing folder
+ tar -xjf dataset.tar.bz2 dataset/sensing/
+ mv dataset/sensing data/raw/dataset/sensing
+ ```
+ 
+ ## Development Workflow
+ 
+ 1. **Data Exploration**: Run scripts in `src/analysis/eda/`
+ 2. **Preprocessing**: Clean and align sensor data (`src/data/`)
+ 3. **Feature Engineering**: Create behavioral features from raw sensors
+ 4. **Modeling**: Train baseline models (`src/analysis/modeling/`)
+ 5. **Advanced ML**: Run XGBoost, LightGBM, LSTM scripts in `src/analysis/modeling/`
+ 6. **Deep Learning**: Transformers, Autoencoders (`src/analysis/modeling/`)
+ 7. **Production**: Build FastAPI service, containerize with Docker
+ 8. **Deploy**: Cloud deployment with federated learning support
 
 ## Key Features
 
