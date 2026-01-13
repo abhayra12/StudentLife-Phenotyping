@@ -199,15 +199,7 @@ docker-compose up
 
 This is a learning project following a structured curriculum. See `plan.md` for the complete learning roadmap.
 
-## Dataset Citation
 
-If you use this implementation:
-
-```
-Wang, R., Chen, F., Chen, Z., Li, T., Harari, G., Tignor, S., Zhou, X., Ben-Zeev, D., & Campbell, A. T. (2014).
-StudentLife: Assessing Mental Health, Academic Performance and Behavioral Trends of College Students Using Smartphones.
-In Proceedings of the 2014 ACM International Joint Conference on Pervasive and Ubiquitous Computing (UbiComp '14).
-```
 
 ## License
 
