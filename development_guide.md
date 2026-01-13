@@ -123,10 +123,13 @@ See [ISSUES_LOG.md](ISSUES_LOG.md) for a history of common issues and solutions.
 
 ## 📜 Project History & Timeline
 
-### Phase 5: Predictive Modeling (Current)
+### Phase 5: Predictive Modeling (Completed - Jan 2026)
+- **Task 5.3**: Classification Baselines (Logistic Regression vs Random Forest).
+  - Best AUC: 0.75 (Random Forest).
+- **Task 5.2**: Evaluation Metrics Deep Dive.
+  - Insight: Classification (AUC 0.76) works better than Regression.
 - **Task 5.1**: Implemented Regression Baselines (Linear, Ridge).
   - Achieved R²=0.11 (Ridge) vs Baseline R²=-0.005.
-  - Predicted next-day activity levels.
 
 ### Phase 4: Feature Engineering (Jan 2026)
 - **Task 4.3**: Location & Mobility Features (DBSCAN clusters).
