@@ -123,6 +123,14 @@ See [ISSUES_LOG.md](ISSUES_LOG.md) for a history of common issues and solutions.
 
 ## 📜 Project History & Timeline
 
+### Phase 7: Deep Learning (Completed - Jan 2026)
+- **Task 7.2**: Transformers.
+  - Implemented Self-Attention model. MAE ~1.18 (Matched LSTM).
+  - Validated deep learning consistency.
+- **Task 7.1**: Autoencoders (Unsupervised).
+  - Learned compressed latent space (3 dimensions).
+  - Enabled Anomaly Detection (Reconstruction Error).
+
 ### Phase 6: Advanced Machine Learning (Completed - Jan 2026)
 - **Task 6.4**: LSTM Timeseries.
   - MAE: ~1.18 (Significantly beat XGBoost 1.66).
