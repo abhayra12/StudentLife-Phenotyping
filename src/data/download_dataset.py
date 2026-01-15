@@ -1,68 +1,81 @@
-"""
-StudentLife Dataset Downloader
-Downloads the StudentLife dataset from Dartmouth College.
-
-Dataset: 53GB compressed, ~100GB extracted
-URL: https://studentlife.cs.dartmouth.edu/dataset/dataset.tar.bz2
-"""
-
 import os
 import requests
-from pathlib import Path
+import tarfile
+import sys
 from tqdm import tqdm
 
-def download_file(url, destination):
-    """Download a file with progress bar."""
-    
-    # Make sure directory exists
-    destination = Path(destination)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    
-    # Check if already downloaded
-    if destination.exists():
-        print(f"✅ File already exists: {destination}")
-        print(f"📊 Size: {destination.stat().st_size / (1024**3):.2f} GB")
-        response = input("Download again? (y/N): ")
-        if response.lower() != 'y':
-            return
-    
-    print(f"📥 Downloading StudentLife dataset...")
-    print(f"   URL: {url}")
-    print(f"   Destination: {destination}")
-    print(f"   Size: ~53 GB (this will take time!)")
-    print()
-    
-    # Stream download with progress bar
-    response = requests.get(url, stream=True, timeout=30)
+DATASET_URL = "https://studentlife.cs.dartmouth.edu/dataset/dataset.tar.bz2"
+RAW_DIR = os.path.join("data", "raw")
+TAR_PATH = os.path.join(RAW_DIR, "dataset.tar.bz2")
+EXTRACT_PATH = os.path.join(RAW_DIR, "dataset")
+
+def download_file(url, filename):
+    """Download file with progress bar."""
+    response = requests.get(url, stream=True)
     total_size = int(response.headers.get('content-length', 0))
-    
-    with open(destination, 'wb') as file, tqdm(
-        desc="Downloading",
+    block_size = 1024 * 1024 # 1MB
+
+    print(f"Downloading {url}...")
+    with open(filename, 'wb') as file, tqdm(
+        desc=filename,
         total=total_size,
-        unit='B',
+        unit='iB',
         unit_scale=True,
         unit_divisor=1024,
-    ) as pbar:
-        for chunk in response.iter_content(chunk_size=8192):
-            size = file.write(chunk)
-            pbar.update(size)
+    ) as bar:
+        for data in response.iter_content(block_size):
+            size = file.write(data)
+            bar.update(size)
+
+def extract_sensing_data(tar_path, extract_to):
+    """Extract only the 'sensing' folder from the tar archive."""
+    print(f"Extracting 'sensing' folder from {tar_path}...")
     
-    print(f"\n✅ Download complete!")
-    print(f"📦 Saved to: {destination}")
-    print(f"📊 Final size: {destination.stat().st_size / (1024**3):.2f} GB")
+    if not os.path.exists(extract_to):
+        os.makedirs(extract_to)
+
+    try:
+        with tarfile.open(tar_path, "r:bz2") as tar:
+            # Filter for sensing folder members
+            members = [m for m in tar.getmembers() if m.name.startswith("dataset/sensing")]
+            
+            if not members:
+                print("Error: 'dataset/sensing' folder not found in archive.")
+                return
+
+            tar.extractall(path=RAW_DIR, members=members) # Extract to data/raw/dataset/sensing
+            print(f"Extraction complete. Data located at: {os.path.join(RAW_DIR, 'dataset', 'sensing')}")
+            
+    except Exception as e:
+        print(f"Extraction failed: {e}")
+
+def main():
+    if not os.path.exists(RAW_DIR):
+        os.makedirs(RAW_DIR)
+
+    # 1. Download if not exists
+    if not os.path.exists(TAR_PATH):
+        try:
+            download_file(DATASET_URL, TAR_PATH)
+        except KeyboardInterrupt:
+            print("\nDownload cancelled. Deleting partial file.")
+            if os.path.exists(TAR_PATH):
+                os.remove(TAR_PATH)
+            sys.exit(1)
+    else:
+        print(f"Archive already exists at {TAR_PATH}, skipping download.")
+
+    # 2. Extract
+    # Check if sensing dir already exists to avoid re-extraction
+    sensing_path = os.path.join(RAW_DIR, "dataset", "sensing")
+    if os.path.exists(sensing_path):
+         print(f"Sensing data already exists at {sensing_path}. Skipping extraction.")
+    else:
+        extract_sensing_data(TAR_PATH, RAW_DIR)
+
+    # 3. Cleanup (Optional - user might want to keep the tar)
+    # os.remove(TAR_PATH)
+    print("\n✅ Data Setup Complete.")
 
 if __name__ == "__main__":
-    # Dataset URL
-    url = "https://studentlife.cs.dartmouth.edu/dataset/dataset.tar.bz2"
-    
-    # Destination path
-    destination = Path("data/raw/dataset.tar.bz2")
-    
-    try:
-        download_file(url, destination)
-    except KeyboardInterrupt:
-        print("\n⚠️ Download interrupted by user")
-    except Exception as e:
-        print(f"\n❌ Error: {e}")
-        print("\nAlternative: Download manually from:")
-        print("https://studentlife.cs.dartmouth.edu/dataset.html")
+    main()
