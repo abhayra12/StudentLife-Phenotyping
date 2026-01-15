@@ -41,6 +41,10 @@ mlartifacts/
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
+# Notebooks (we use script-first approach)
+*.ipynb
+notebooks/
+
 # Environment
 venv/
 env/
@@ -92,3 +96,12 @@ Thumbs.db
 *.temp
 
 pipeline_logs.txt
+
+MENTOR_PROJECT_OVERVIEW.md
+
+# CatBoost training artifacts
+catboost_info/
+
+# Temporary documentation artifacts
+CODEBASE_VERIFICATION.md
+CLEANUP_SUMMARY.md
