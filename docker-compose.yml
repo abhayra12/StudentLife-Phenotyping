@@ -17,6 +17,7 @@ services:
     environment:
       - MLFLOW_BACKEND_STORE_URI=sqlite:////mlflow/backend/mlflow.db
       - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+      - MLFLOW_SERVER_ALLOWED_HOSTS=mlflow,mlflow:*,localhost,localhost:*,127.0.0.1,127.0.0.1:*,0.0.0.0,0.0.0.0:*
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
       interval: 30s
@@ -28,43 +29,7 @@ services:
       - studentlife-network
 
   # ============================================================================
-  # API Service - FastAPI inference server
-  # ============================================================================
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: studentlife-api
-    ports:
-      - "8000:8000"
-    environment:
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-      - LOG_LEVEL=INFO
-    volumes:
-      - ./models:/app/models:ro # Read-only model mount
-      - ./src:/app/src:ro # Read-only source mount (for development)
-    depends_on:
-      mlflow:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=5)" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-    restart: unless-stopped
-    networks:
-      - studentlife-network
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          memory: 1G
-
-  # ============================================================================
-  # Training Service (On-demand) - Run with: docker-compose run training
+  # Training Service - ML development, training, and optional API serving
   # ============================================================================
   training:
     build:
@@ -75,22 +40,26 @@ services:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./src:/app/src # Source code (for development)
-      - ./data:/app/data # Data directory
-      - ./models:/app/models # Models directory
-      - ./reports:/app/reports # Reports directory
-      - mlflow_artifacts:/mlflow/artifacts # Shared MLflow artifacts
+      - ./src:/app/src              # Source code (live updates)
+      - ./data:/app/data            # Data directory
+      - ./models:/app/models        # Models directory
+      - ./reports:/app/reports      # Reports directory
+      - ./notebooks:/app/notebooks  # Jupyter notebooks
+      - mlflow_artifacts:/mlflow/artifacts  # Shared MLflow artifacts
+    ports:
+      - "8888:8888"  # Jupyter
+      - "8000:8000"  # FastAPI (if needed)
     depends_on:
       mlflow:
         condition: service_healthy
     networks:
       - studentlife-network
     profiles:
-      - training # Only start with explicit profile
+      - training  # Only start with explicit profile
     deploy:
       resources:
         limits:
-          cpus: '4'
+          cpus: '2'
           memory: 4G
 
 # ============================================================================
