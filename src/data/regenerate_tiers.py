@@ -2,7 +2,7 @@
 Regenerate Participant Tiers
 
 This script regenerates the participant_tiers.csv file by analyzing
-sensor coverage in data/raw/dataset/sensing.
+sensor coverage in data/raw/dataset/sensing or data/raw/sensing.
 """
 
 import pandas as pd
@@ -10,6 +10,13 @@ from pathlib import Path
 
 def regenerate_tiers():
     sensing_path = Path('data/raw/dataset/sensing')
+    if not sensing_path.exists():
+        alt_path = Path('data/raw/sensing')
+        if alt_path.exists():
+            sensing_path = alt_path
+        else:
+            print("Error: sensing data not found in data/raw/dataset/sensing or data/raw/sensing")
+            return
     output_path = Path('data/processed/participant_tiers.csv')
     output_path.parent.mkdir(parents=True, exist_ok=True)
     

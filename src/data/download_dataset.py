@@ -4,7 +4,7 @@ import tarfile
 import sys
 from tqdm import tqdm
 
-DATASET_URL = "https://studentlife.cs.dartmouth.edu/dataset/dataset.tar.bz2"
+DATASET_URL = "https://student-pheno.s3.ap-south-1.amazonaws.com/raw/dataset.tar.bz2"
 RAW_DIR = os.path.join("data", "raw")
 TAR_PATH = os.path.join(RAW_DIR, "dataset.tar.bz2")
 EXTRACT_PATH = os.path.join(RAW_DIR, "dataset")

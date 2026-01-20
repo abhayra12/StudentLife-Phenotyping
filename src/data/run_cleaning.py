@@ -23,6 +23,13 @@ from src.data.cleaning import (
 def run_cleaning():
     # Paths
     RAW_PATH = Path('data/raw/dataset/sensing')
+    if not RAW_PATH.exists():
+        alt_path = Path('data/raw/sensing')
+        if alt_path.exists():
+            RAW_PATH = alt_path
+        else:
+            print("Error: sensing data not found in data/raw/dataset/sensing or data/raw/sensing")
+            return
     PROCESSED_PATH = Path('data/processed')
     CLEANED_PATH = PROCESSED_PATH / 'cleaned'
     CLEANED_PATH.mkdir(parents=True, exist_ok=True)
