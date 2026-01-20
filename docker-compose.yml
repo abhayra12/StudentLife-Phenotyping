@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # MLflow Tracking Server - Experiment tracking and model registry
+  # ============================================================================
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    container_name: studentlife-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow/backend
+      - mlflow_artifacts:/mlflow/artifacts
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=sqlite:////mlflow/backend/mlflow.db
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - studentlife-network
+
+  # ============================================================================
+  # API Service - FastAPI inference server
+  # ============================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: studentlife-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./models:/app/models:ro # Read-only model mount
+      - ./src:/app/src:ro # Read-only source mount (for development)
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=5)" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - studentlife-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  # ============================================================================
+  # Training Service (On-demand) - Run with: docker-compose run training
+  # ============================================================================
+  training:
+    build:
+      context: .
+      dockerfile: Dockerfile.train
+    container_name: studentlife-training
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./src:/app/src # Source code (for development)
+      - ./data:/app/data # Data directory
+      - ./models:/app/models # Models directory
+      - ./reports:/app/reports # Reports directory
+      - mlflow_artifacts:/mlflow/artifacts # Shared MLflow artifacts
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    networks:
+      - studentlife-network
+    profiles:
+      - training # Only start with explicit profile
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+
+# ============================================================================
+# Named Volumes - Persistent storage
+# ============================================================================
+volumes:
+  mlflow_data:
+    driver: local
+  mlflow_artifacts:
+    driver: local
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  studentlife-network:
+    driver: bridge

@@ -18,12 +18,15 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import sys
 from sklearn.preprocessing import StandardScaler
+import mlflow
+import mlflow.pytorch
 
 # Add project root to path
 sys.path.append('.')
 from src.features.temporal_features import process_temporal_features
 from src.features.activity_sleep import process_activity_sleep
 from src.features.location_features import process_location_features
+from src.mlflow_config import setup_mlflow, log_model_to_registry, AUTOENCODER_MODEL_NAME
 
 # Config
 LATENT_DIM = 3
@@ -97,231 +100,298 @@ def load_data():
 def train_autoencoder():
     print(f"--- Task 7.1: Autoencoder Analysis with Weekend Normalization (Device: {DEVICE}) ---")
     
+    # Initialize MLflow
+    setup_mlflow()
+    
     X_train, X_val, feature_names, df_train, df_val = load_data()
     input_dim = X_train.shape[1]
     
-    # DataLoaders
-    train_ds = TensorDataset(torch.FloatTensor(X_train))
-    val_ds = TensorDataset(torch.FloatTensor(X_val))
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
-    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
-    
-    # Model
-    model = Autoencoder(input_dim, LATENT_DIM).to(DEVICE)
-    optimizer = torch.optim.Adam(model.parameters(), lr=LR)
-    criterion = nn.MSELoss()
-    
-    # Train
-    print("Training Autoencoder...")
-    history = []
-    
-    for epoch in range(EPOCHS):
-        model.train()
-        train_loss = 0
-        for batch in train_loader:
-            x = batch[0].to(DEVICE)
-            optimizer.zero_grad()
-            recon, _ = model(x)
-            loss = criterion(recon, x)
-            loss.backward()
-            optimizer.step()
-            train_loss += loss.item()
-            
-        # Validation
-        model.eval()
-        val_loss = 0
-        with torch.no_grad():
-            for batch in val_loader:
+    # Start MLflow run
+    with mlflow.start_run(run_name="autoencoder_anomaly_detection"):
+        
+        # Log hyperparameters
+        mlflow.log_params({
+            "model_type": "Autoencoder",
+            "input_dim": input_dim,
+            "latent_dim": LATENT_DIM,
+            "batch_size": BATCH_SIZE,
+            "learning_rate": LR,
+            "epochs": EPOCHS,
+            "optimizer": "Adam",
+            "loss_function": "MSELoss",
+            "device": str(DEVICE),
+            "anomaly_detection": "weekend_normalized"
+        })
+        
+        # DataLoaders
+        train_ds = TensorDataset(torch.FloatTensor(X_train))
+        val_ds = TensorDataset(torch.FloatTensor(X_val))
+        train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
+        val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
+        
+        # Model
+        model = Autoencoder(input_dim, LATENT_DIM).to(DEVICE)
+        optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+        criterion = nn.MSELoss()
+        
+        # Train
+        print("Training Autoencoder...")
+        history = []
+        
+        for epoch in range(EPOCHS):
+            model.train()
+            train_loss = 0
+            for batch in train_loader:
                 x = batch[0].to(DEVICE)
+                optimizer.zero_grad()
                 recon, _ = model(x)
                 loss = criterion(recon, x)
-                val_loss += loss.item()
+                loss.backward()
+                optimizer.step()
+                train_loss += loss.item()
                 
-        avg_train = train_loss / len(train_loader)
-        avg_val = val_loss / len(val_loader)
-        history.append((avg_train, avg_val))
-        
-        if (epoch+1) % 10 == 0:
-            print(f"Epoch {epoch+1}/{EPOCHS} | Train MSE: {avg_train:.4f} | Val MSE: {avg_val:.4f}")
+            # Validation
+            model.eval()
+            val_loss = 0
+            with torch.no_grad():
+                for batch in val_loader:
+                    x = batch[0].to(DEVICE)
+                    recon, _ = model(x)
+                    loss = criterion(recon, x)
+                    val_loss += loss.item()
+                    
+            avg_train = train_loss / len(train_loader)
+            avg_val = val_loss / len(val_loader)
+            history.append((avg_train, avg_val))
             
-    # Analyze Reconstruction Distribution
-    model.eval()
-    all_x = torch.FloatTensor(X_val).to(DEVICE)
-    with torch.no_grad():
-        recon_val, latent_val = model(all_x)
-        # MSE per sample
-        mse_per_sample = torch.mean((all_x - recon_val)**2, dim=1).cpu().numpy()
-        latent_val = latent_val.cpu().numpy()
+            # Log metrics to MLflow
+            mlflow.log_metrics({
+                "train_mse": avg_train,
+                "val_mse": avg_val
+            }, step=epoch)
+            
+            if (epoch+1) % 10 == 0:
+                print(f"Epoch {epoch+1}/{EPOCHS} | Train MSE: {avg_train:.4f} | Val MSE: {avg_val:.4f}")
         
-    df_val['reconstruction_error'] = mse_per_sample
-    
-    # ==================== WEEKEND NORMALIZATION ====================
-    print("\n=== Weekend Normalization Analysis ===")
-    
-    # Separate weekday and weekend data
-    weekday_errors = df_val[df_val['is_weekend'] == 0]['reconstruction_error']
-    weekend_errors = df_val[df_val['is_weekend'] == 1]['reconstruction_error']
-    
-    # Compute separate thresholds (95th percentile)
-    weekday_threshold = np.percentile(weekday_errors, 95)
-    weekend_threshold = np.percentile(weekend_errors, 95)
-    
-    print(f"Weekday (Mon-Fri) Threshold: {weekday_threshold:.4f}")
-    print(f"Weekend (Sat-Sun) Threshold: {weekend_threshold:.4f}")
-    print(f"Threshold Ratio (Weekend/Weekday): {weekend_threshold/weekday_threshold:.2f}x")
-    
-    # Apply day-specific thresholds
-    df_val['threshold'] = df_val['is_weekend'].map({0: weekday_threshold, 1: weekend_threshold})
-    df_val['is_anomaly'] = df_val['reconstruction_error'] > df_val['threshold']
-    
-    # Statistics
-    total_anomalies = df_val['is_anomaly'].sum()
-    weekday_anomalies = df_val[(df_val['is_weekend'] == 0) & (df_val['is_anomaly'])].shape[0]
-    weekend_anomalies = df_val[(df_val['is_weekend'] == 1) & (df_val['is_anomaly'])].shape[0]
-    
-    print(f"\n=== Anomaly Detection Results ===")
-    print(f"Total Anomalies: {total_anomalies} / {len(df_val)} ({100*total_anomalies/len(df_val):.1f}%)")
-    print(f"  Weekday Anomalies: {weekday_anomalies} / {len(weekday_errors)} ({100*weekday_anomalies/len(weekday_errors):.1f}%)")
-    print(f"  Weekend Anomalies: {weekend_anomalies} / {len(weekend_errors)} ({100*weekend_anomalies/len(weekend_errors):.1f}%)")
-    
-    # Compare with naive (single threshold) approach
-    naive_threshold = np.percentile(mse_per_sample, 95)
-    df_val['is_anomaly_naive'] = df_val['reconstruction_error'] > naive_threshold
-    naive_total = df_val['is_anomaly_naive'].sum()
-    naive_weekend = df_val[(df_val['is_weekend'] == 1) & (df_val['is_anomaly_naive'])].shape[0]
-    
-    print(f"\n=== Comparison with Naive (Single Threshold) ===")
-    print(f"Naive Total Anomalies: {naive_total}")
-    print(f"Naive Weekend Anomalies: {naive_weekend} ({100*naive_weekend/len(weekend_errors):.1f}% of weekends)")
-    print(f"Improvement: {naive_weekend - weekend_anomalies} fewer weekend false positives")
-    
-    # ===============================================================
-    
-    anomalies = df_val[df_val['is_anomaly']]
-    
-    # Save Results
-    out_dir = Path('reports/figures/modeling')
-    out_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Save Model Weights
-    models_dir = Path('models')
-    models_dir.mkdir(parents=True, exist_ok=True)
-    torch.save(model.state_dict(), models_dir / 'autoencoder.pth')
-    print(f"\nModel saved to {models_dir / 'autoencoder.pth'}")
-    
-    # Save thresholds for inference
-    thresholds = {
-        'weekday_threshold': float(weekday_threshold),
-        'weekend_threshold': float(weekend_threshold),
-        'naive_threshold': float(naive_threshold)
-    }
-    import json
-    with open(models_dir / 'anomaly_thresholds.json', 'w') as f:
-        json.dump(thresholds, f, indent=2)
-    print(f"Thresholds saved to {models_dir / 'anomaly_thresholds.json'}")
-    
-    # 1. Error Distribution Plot (with weekend split)
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
-    
-    # Weekday distribution
-    axes[0].hist(weekday_errors, bins=50, alpha=0.7, color='blue', label='Weekday')
-    axes[0].axvline(weekday_threshold, color='red', linestyle='--', linewidth=2, label=f'Weekday Threshold ({weekday_threshold:.4f})')
-    axes[0].set_title("Weekday Reconstruction Error Distribution")
-    axes[0].set_xlabel("MSE Loss")
-    axes[0].set_ylabel("Count")
-    axes[0].legend()
-    axes[0].grid(alpha=0.3)
-    
-    # Weekend distribution
-    axes[1].hist(weekend_errors, bins=50, alpha=0.7, color='green', label='Weekend')
-    axes[1].axvline(weekend_threshold, color='red', linestyle='--', linewidth=2, label=f'Weekend Threshold ({weekend_threshold:.4f})')
-    axes[1].set_title("Weekend Reconstruction Error Distribution")
-    axes[1].set_xlabel("MSE Loss")
-    axes[1].set_ylabel("Count")
-    axes[1].legend()
-    axes[1].grid(alpha=0.3)
-    
-    plt.tight_layout()
-    plt.savefig(out_dir / 'reconstruction_error_weekend_split.png', dpi=150)
-    print(f"Saved: {out_dir / 'reconstruction_error_weekend_split.png'}")
-    
-    # 2. Combined Error Distribution (original plot)
-    plt.figure(figsize=(10, 6))
-    plt.hist(weekday_errors, bins=50, alpha=0.5, color='blue', label='Weekday')
-    plt.hist(weekend_errors, bins=50, alpha=0.5, color='green', label='Weekend')
-    plt.axvline(weekday_threshold, color='blue', linestyle='--', label='Weekday Threshold')
-    plt.axvline(weekend_threshold, color='green', linestyle='--', label='Weekend Threshold')
-    plt.axvline(naive_threshold, color='red', linestyle=':', linewidth=2, label='Naive (Single) Threshold')
-    plt.title("Reconstruction Error Distribution: Weekday vs Weekend")
-    plt.xlabel("MSE Loss")
-    plt.ylabel("Count")
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.savefig(out_dir / 'reconstruction_error.png', dpi=150)
-    print(f"Saved: {out_dir / 'reconstruction_error.png'}")
-    
-    # 3. Latent Space Plot (3D, colored by weekend)
-    fig = plt.figure(figsize=(12, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    
-    # Separate weekday and weekend points
-    weekday_mask = df_val['is_weekend'] == 0
-    weekend_mask = df_val['is_weekend'] == 1
-    
-    ax.scatter(latent_val[weekday_mask, 0], latent_val[weekday_mask, 1], latent_val[weekday_mask, 2], 
-               c='blue', s=10, alpha=0.5, label='Weekday')
-    ax.scatter(latent_val[weekend_mask, 0], latent_val[weekend_mask, 1], latent_val[weekend_mask, 2], 
-               c='orange', s=10, alpha=0.5, label='Weekend')
-    
-    ax.set_title("Latent Space: Weekday vs Weekend Behavior")
-    ax.set_xlabel("Latent Dim 1")
-    ax.set_ylabel("Latent Dim 2")
-    ax.set_zlabel("Latent Dim 3")
-    ax.legend()
-    plt.savefig(out_dir / 'latent_space.png', dpi=150)
-    print(f"Saved: {out_dir / 'latent_space.png'}")
-    
-    # Save CSV
-    res_dir = Path('reports/results')
-    res_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Save anomalies with day-of-week info
-    anomalies_enhanced = anomalies[['participant_id', 'timestamp', 'day_of_week', 'is_weekend', 
-                                     'reconstruction_error', 'threshold', 'activity_active_minutes']].copy()
-    anomalies_enhanced['day_name'] = anomalies_enhanced['timestamp'].dt.day_name()
-    anomalies_enhanced = anomalies_enhanced.sort_values('reconstruction_error', ascending=False)
-    anomalies_enhanced.to_csv(res_dir / 'anomalies.csv', index=False)
-    print(f"Saved: {res_dir / 'anomalies.csv'}")
-    
-    # Save summary statistics
-    summary = {
-        'total_samples': len(df_val),
-        'weekday_samples': int(len(weekday_errors)),
-        'weekend_samples': int(len(weekend_errors)),
-        'total_anomalies': int(total_anomalies),
-        'weekday_anomalies': int(weekday_anomalies),
-        'weekend_anomalies': int(weekend_anomalies),
-        'weekday_threshold': float(weekday_threshold),
-        'weekend_threshold': float(weekend_threshold),
-        'naive_threshold': float(naive_threshold),
-        'naive_total_anomalies': int(naive_total),
-        'naive_weekend_anomalies': int(naive_weekend),
-        'false_positive_reduction': int(naive_weekend - weekend_anomalies)
-    }
-    
-    with open(res_dir / 'anomaly_summary.json', 'w') as f:
-        json.dump(summary, f, indent=2)
-    print(f"Saved: {res_dir / 'anomaly_summary.json'}")
-    
-    print("\n✅ Analysis Complete. Weekend normalization implemented successfully!")
-    print(f"   - Reduced weekend false positives by {naive_weekend - weekend_anomalies} cases")
-    print(f"   - Visualizations saved to {out_dir}/")
-    print(f"   - Results saved to {res_dir}/")
+        # Analyze Reconstruction Distribution
+        model.eval()
+        all_x = torch.FloatTensor(X_val).to(DEVICE)
+        with torch.no_grad():
+            recon_val, latent_val = model(all_x)
+            # MSE per sample
+            mse_per_sample = torch.mean((all_x - recon_val)**2, dim=1).cpu().numpy()
+            latent_val = latent_val.cpu().numpy()
+            
+        df_val['reconstruction_error'] = mse_per_sample
+        
+        # ==================== WEEKEND NORMALIZATION ====================
+        print("\n=== Weekend Normalization Analysis ===")
+        
+        # Separate weekday and weekend data
+        weekday_errors = df_val[df_val['is_weekend'] == 0]['reconstruction_error']
+        weekend_errors = df_val[df_val['is_weekend'] == 1]['reconstruction_error']
+        
+        # Compute separate thresholds (95th percentile)
+        weekday_threshold = np.percentile(weekday_errors, 95)
+        weekend_threshold = np.percentile(weekend_errors, 95)
+        
+        print(f"Weekday (Mon-Fri) Threshold: {weekday_threshold:.4f}")
+        print(f"Weekend (Sat-Sun) Threshold: {weekend_threshold:.4f}")
+        print(f"Threshold Ratio (Weekend/Weekday): {weekend_threshold/weekday_threshold:.2f}x")
+        
+        # Log thresholds to MLflow
+        mlflow.log_metrics({
+            "weekday_threshold": weekday_threshold,
+            "weekend_threshold": weekend_threshold,
+            "threshold_ratio": weekend_threshold/weekday_threshold
+        })
+        
+        # Apply day-specific thresholds
+        df_val['threshold'] = df_val['is_weekend'].map({0: weekday_threshold, 1: weekend_threshold})
+        df_val['is_anomaly'] = df_val['reconstruction_error'] > df_val['threshold']
+        
+        # Statistics
+        total_anomalies = df_val['is_anomaly'].sum()
+        weekday_anomalies = df_val[(df_val['is_weekend'] == 0) & (df_val['is_anomaly'])].shape[0]
+        weekend_anomalies = df_val[(df_val['is_weekend'] == 1) & (df_val['is_anomaly'])].shape[0]
+        
+        print(f"\n=== Anomaly Detection Results ===")
+        print(f"Total Anomalies: {total_anomalies} / {len(df_val)} ({100*total_anomalies/len(df_val):.1f}%)")
+        print(f"  Weekday Anomalies: {weekday_anomalies} / {len(weekday_errors)} ({100*weekday_anomalies/len(weekday_errors):.1f}%)")
+        print(f"  Weekend Anomalies: {weekend_anomalies} / {len(weekend_errors)} ({100*weekend_anomalies/len(weekend_errors):.1f}%)")
+        
+        # Log anomaly metrics to MLflow
+        mlflow.log_metrics({
+            "total_anomalies": int(total_anomalies),
+            "anomaly_rate": total_anomalies / len(df_val),
+            "weekday_anomaly_rate": weekday_anomalies / len(weekday_errors),
+            "weekend_anomaly_rate": weekend_anomalies / len(weekend_errors)
+        })
+        
+        # Compare with naive (single threshold) approach
+        naive_threshold = np.percentile(mse_per_sample, 95)
+        df_val['is_anomaly_naive'] = df_val['reconstruction_error'] > naive_threshold
+        naive_total = df_val['is_anomaly_naive'].sum()
+        naive_weekend = df_val[(df_val['is_weekend'] == 1) & (df_val['is_anomaly_naive'])].shape[0]
+        
+        print(f"\n=== Comparison with Naive (Single Threshold) ===")
+        print(f"Naive Total Anomalies: {naive_total}")
+        print(f"Naive Weekend Anomalies: {naive_weekend} ({100*naive_weekend/len(weekend_errors):.1f}% of weekends)")
+        print(f"Improvement: {naive_weekend - weekend_anomalies} fewer weekend false positives")
+        
+        mlflow.log_metrics({
+            "naive_threshold": naive_threshold,
+            "false_positive_reduction": int(naive_weekend - weekend_anomalies)
+        })
+        
+        # ===============================================================
+        
+        anomalies = df_val[df_val['is_anomaly']]
+        
+        # Save Results
+        out_dir = Path('reports/figures/modeling')
+        out_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Save Model Weights
+        models_dir = Path('models')
+        models_dir.mkdir(parents=True, exist_ok=True)
+        torch.save(model.state_dict(), models_dir / 'autoencoder.pth')
+        print(f"\nModel saved to {models_dir / 'autoencoder.pth'}")
+        
+        # Save thresholds for inference
+        thresholds = {
+            'weekday_threshold': float(weekday_threshold),
+            'weekend_threshold': float(weekend_threshold),
+            'naive_threshold': float(naive_threshold)
+        }
+        import json
+        with open(models_dir / 'anomaly_thresholds.json', 'w') as f:
+            json.dump(thresholds, f, indent=2)
+        print(f"Thresholds saved to {models_dir / 'anomaly_thresholds.json'}")
+        mlflow.log_artifact(str(models_dir / 'anomaly_thresholds.json'))
+        
+        # 1. Error Distribution Plot (with weekend split)
+        fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+        
+        # Weekday distribution
+        axes[0].hist(weekday_errors, bins=50, alpha=0.7, color='blue', label='Weekday')
+        axes[0].axvline(weekday_threshold, color='red', linestyle='--', linewidth=2, label=f'Weekday Threshold ({weekday_threshold:.4f})')
+        axes[0].set_title("Weekday Reconstruction Error Distribution")
+        axes[0].set_xlabel("MSE Loss")
+        axes[0].set_ylabel("Count")
+        axes[0].legend()
+        axes[0].grid(alpha=0.3)
+        
+        # Weekend distribution
+        axes[1].hist(weekend_errors, bins=50, alpha=0.7, color='green', label='Weekend')
+        axes[1].axvline(weekend_threshold, color='red', linestyle='--', linewidth=2, label=f'Weekend Threshold ({weekend_threshold:.4f})')
+        axes[1].set_title("Weekend Reconstruction Error Distribution")
+        axes[1].set_xlabel("MSE Loss")
+        axes[1].set_ylabel("Count")
+        axes[1].legend()
+        axes[1].grid(alpha=0.3)
+        
+        plt.tight_layout()
+        plt.savefig(out_dir / 'reconstruction_error_weekend_split.png', dpi=150)
+        print(f"Saved: {out_dir / 'reconstruction_error_weekend_split.png'}")
+        mlflow.log_artifact(str(out_dir / 'reconstruction_error_weekend_split.png'))
+        
+        # 2. Combined Error Distribution (original plot)
+        plt.figure(figsize=(10, 6))
+        plt.hist(weekday_errors, bins=50, alpha=0.5, color='blue', label='Weekday')
+        plt.hist(weekend_errors, bins=50, alpha=0.5, color='green', label='Weekend')
+        plt.axvline(weekday_threshold, color='blue', linestyle='--', label='Weekday Threshold')
+        plt.axvline(weekend_threshold, color='green', linestyle='--', label='Weekend Threshold')
+        plt.axvline(naive_threshold, color='red', linestyle=':', linewidth=2, label='Naive (Single) Threshold')
+        plt.title("Reconstruction Error Distribution: Weekday vs Weekend")
+        plt.xlabel("MSE Loss")
+        plt.ylabel("Count")
+        plt.legend()
+        plt.grid(alpha=0.3)
+        plt.savefig(out_dir / 'reconstruction_error.png', dpi=150)
+        print(f"Saved: {out_dir / 'reconstruction_error.png'}")
+        mlflow.log_artifact(str(out_dir / 'reconstruction_error.png'))
+        
+        # 3. Latent Space Plot (3D, colored by weekend)
+        fig = plt.figure(figsize=(12, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        
+        # Separate weekday and weekend points
+        weekday_mask = df_val['is_weekend'] == 0
+        weekend_mask = df_val['is_weekend'] == 1
+        
+        ax.scatter(latent_val[weekday_mask, 0], latent_val[weekday_mask, 1], latent_val[weekday_mask, 2], 
+                   c='blue', s=10, alpha=0.5, label='Weekday')
+        ax.scatter(latent_val[weekend_mask, 0], latent_val[weekend_mask, 1], latent_val[weekend_mask, 2], 
+                   c='orange', s=10, alpha=0.5, label='Weekend')
+        
+        ax.set_title("Latent Space: Weekday vs Weekend Behavior")
+        ax.set_xlabel("Latent Dim 1")
+        ax.set_ylabel("Latent Dim 2")
+        ax.set_zlabel("Latent Dim 3")
+        ax.legend()
+        plt.savefig(out_dir / 'latent_space.png', dpi=150)
+        print(f"Saved: {out_dir / 'latent_space.png'}")
+        mlflow.log_artifact(str(out_dir / 'latent_space.png'))
+        
+        # Save CSV
+        res_dir = Path('reports/results')
+        res_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Save anomalies with day-of-week info
+        anomalies_enhanced = anomalies[['participant_id', 'timestamp', 'day_of_week', 'is_weekend', 
+                                         'reconstruction_error', 'threshold', 'activity_active_minutes']].copy()
+        anomalies_enhanced['day_name'] = anomalies_enhanced['timestamp'].dt.day_name()
+        anomalies_enhanced = anomalies_enhanced.sort_values('reconstruction_error', ascending=False)
+        anomalies_enhanced.to_csv(res_dir / 'anomalies.csv', index=False)
+        print(f"Saved: {res_dir / 'anomalies.csv'}")
+        mlflow.log_artifact(str(res_dir / 'anomalies.csv'))
+        
+        # Save summary statistics
+        summary = {
+            'total_samples': len(df_val),
+            'weekday_samples': int(len(weekday_errors)),
+            'weekend_samples': int(len(weekend_errors)),
+            'total_anomalies': int(total_anomalies),
+            'weekday_anomalies': int(weekday_anomalies),
+            'weekend_anomalies': int(weekend_anomalies),
+            'weekday_threshold': float(weekday_threshold),
+            'weekend_threshold': float(weekend_threshold),
+            'naive_threshold': float(naive_threshold),
+            'naive_total_anomalies': int(naive_total),
+            'naive_weekend_anomalies': int(naive_weekend),
+            'false_positive_reduction': int(naive_weekend - weekend_anomalies)
+        }
+        
+        with open(res_dir / 'anomaly_summary.json', 'w') as f:
+            json.dump(summary, f, indent=2)
+        print(f"Saved: {res_dir / 'anomaly_summary.json'}")
+        mlflow.log_artifact(str(res_dir / 'anomaly_summary.json'))
+        
+        # Log model to MLflow registry
+        example_input = torch.randn(1, input_dim)
+        log_model_to_registry(
+            model=model,
+            model_name=AUTOENCODER_MODEL_NAME,
+            input_example=example_input.numpy(),
+            pip_requirements=["torch>=2.9.1", "numpy>=2.4.1"]
+        )
+        
+        print("\n✅ Analysis Complete. Weekend normalization implemented successfully!")
+        print(f"   - Reduced weekend false positives by {naive_weekend - weekend_anomalies} cases")
+        print(f"   - Visualizations saved to {out_dir}/")
+        print(f"   - Results saved to {res_dir}/")
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for training."""
     try:
         train_autoencoder()
     except Exception as e:
         print(f"Error: {e}")
+        mlflow.end_run(status="FAILED")
         import traceback
         traceback.print_exc()
+        raise
+
+if __name__ == "__main__":
+    main()

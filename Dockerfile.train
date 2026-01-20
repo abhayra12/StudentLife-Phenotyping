@@ -1,0 +1,40 @@
+# Dockerfile for Training - Includes development tools and Jupyter
+# Designed for iterative experimentation and model development
+
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Install system dependencies for training
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for dependency management
+RUN pip install --no-cache-dir uv
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install ALL dependencies (including dev dependencies)
+RUN uv sync --frozen
+
+# Copy source code
+COPY src/ src/
+COPY train.py ./
+
+# Create directories for data and models
+RUN mkdir -p data models mlruns reports
+
+# Set environment variables
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    MLFLOW_TRACKING_URI="http://mlflow:5000"
+
+# Expose Jupyter port (optional)
+EXPOSE 8888
+
+# Default command - can be overridden
+CMD ["python", "train.py"]
