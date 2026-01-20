@@ -1,14 +1,75 @@
-__pycache__
-*.pyc
-*.pyo
-*.pyd
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 .Python
-env/
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
 venv/
-.env
-.ipynb_checkpoints
+ENV/
+env/
+
+# Data directories (large files)
 data/
+*.parquet
+*.csv
+*.json
+*.pkl
+*.pickle
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Models (will be mounted or copied separately)
+models/*.pth
+models/*.pt
+
+# Reports and outputs
 reports/
+*.png
+*.jpg
+*.pdf
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Tests
+tests/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+
 logs/
 pipeline_logs.txt
 .git

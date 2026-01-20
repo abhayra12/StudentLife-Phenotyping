@@ -16,12 +16,15 @@ import math
 from pathlib import Path
 import sys
 from sklearn.preprocessing import StandardScaler
+import mlflow
+import mlflow.pytorch
 
 # Add project root to path
 sys.path.append('.')
 from src.features.temporal_features import process_temporal_features
 from src.features.activity_sleep import process_activity_sleep
 from src.features.location_features import process_location_features
+from src.mlflow_config import setup_mlflow, log_model_to_registry, TRANSFORMER_MODEL_NAME
 
 # Config
 SEQ_LEN = 24
@@ -133,69 +136,125 @@ def load_data():
 def train_transformer():
     print(f"--- Task 7.2: Transformer Training (Device: {DEVICE}) ---")
     
+    # Initialize MLflow
+    setup_mlflow()
+    
     train_ds, val_ds, input_dim = load_data()
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
     
-    model = BehaviorTransformer(input_dim=input_dim, d_model=D_MODEL, nhead=NHEAD, num_layers=NUM_LAYERS).to(DEVICE)
-    optimizer = torch.optim.Adam(model.parameters(), lr=LR)
-    criterion = nn.L1Loss() # MAE
-    
-    best_val_loss = float('inf')
-    patience = 5
-    patience_counter = 0
-    
-    print("Training Transformer...")
-    for epoch in range(EPOCHS):
-        model.train()
-        train_loss = 0
-        for X_batch, y_batch in train_loader:
-            X_batch, y_batch = X_batch.to(DEVICE), y_batch.to(DEVICE)
-            optimizer.zero_grad()
-            preds = model(X_batch)
-            loss = criterion(preds, y_batch)
-            loss.backward()
-            optimizer.step()
-            train_loss += loss.item()
-            
-        model.eval()
-        val_loss = 0
-        with torch.no_grad():
-            for X_batch, y_batch in val_loader:
+    # Start MLflow run
+    with mlflow.start_run(run_name="transformer_training"):
+        # Log hyperparameters
+        mlflow.log_params({
+            "model_type": "Transformer",
+            "input_dim": input_dim,
+            "d_model": D_MODEL,
+            "nhead": NHEAD,
+            "num_layers": NUM_LAYERS,
+            "dropout": DROPOUT,
+            "seq_len": SEQ_LEN,
+            "batch_size": BATCH_SIZE,
+            "learning_rate": LR,
+            "epochs": EPOCHS,
+            "optimizer": "Adam",
+            "loss_function": "L1Loss (MAE)",
+            "device": str(DEVICE)
+        })
+        
+        model = BehaviorTransformer(input_dim=input_dim, d_model=D_MODEL, nhead=NHEAD, num_layers=NUM_LAYERS).to(DEVICE)
+        optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+        criterion = nn.L1Loss() # MAE
+        
+        best_val_loss = float('inf')
+        patience = 5
+        patience_counter = 0
+        
+        print("Training Transformer...")
+        for epoch in range(EPOCHS):
+            model.train()
+            train_loss = 0
+            for X_batch, y_batch in train_loader:
                 X_batch, y_batch = X_batch.to(DEVICE), y_batch.to(DEVICE)
+                optimizer.zero_grad()
                 preds = model(X_batch)
                 loss = criterion(preds, y_batch)
-                val_loss += loss.item()
+                loss.backward()
+                optimizer.step()
+                train_loss += loss.item()
                 
-        avg_train = train_loss / len(train_loader)
-        avg_val = val_loss / len(val_loader)
+            model.eval()
+            val_loss = 0
+            with torch.no_grad():
+                for X_batch, y_batch in val_loader:
+                    X_batch, y_batch = X_batch.to(DEVICE), y_batch.to(DEVICE)
+                    preds = model(X_batch)
+                    loss = criterion(preds, y_batch)
+                    val_loss += loss.item()
+                    
+            avg_train = train_loss / len(train_loader)
+            avg_val = val_loss / len(val_loader)
+            
+            # Log metrics to MLflow
+            mlflow.log_metrics({
+                "train_mae": avg_train,
+                "val_mae": avg_val
+            }, step=epoch)
+            
+            print(f"Epoch {epoch+1}/{EPOCHS} | Train MAE: {avg_train:.4f} | Val MAE: {avg_val:.4f}")
+            
+            if avg_val < best_val_loss:
+                best_val_loss = avg_val
+                torch.save(model.state_dict(), 'models/transformer_best.pth')
+                patience_counter = 0
+            else:
+                patience_counter += 1
+                if patience_counter >= patience:
+                    print("Early stopping.")
+                    mlflow.log_param("early_stopped_at_epoch", epoch + 1)
+                    break
+                    
+        print(f"\nTransformer Best Val MAE: {best_val_loss:.4f}")
         
-        print(f"Epoch {epoch+1}/{EPOCHS} | Train MAE: {avg_train:.4f} | Val MAE: {avg_val:.4f}")
+        # Log best validation loss
+        mlflow.log_metric("best_val_mae", best_val_loss)
         
-        if avg_val < best_val_loss:
-            best_val_loss = avg_val
-            torch.save(model.state_dict(), 'models/transformer_best.pth')
-            patience_counter = 0
-        else:
-            patience_counter += 1
-            if patience_counter >= patience:
-                print("Early stopping.")
-                break
-                
-    print(f"\nTransformer Best Val MAE: {best_val_loss:.4f}")
-    
-    # Compare with LSTM (Read from file if exists)
-    try:
-        with open('reports/results/lstm_results.txt', 'r') as f:
-            print("\nvs " + f.read().strip())
-    except: pass
-    
-    # Save results
-    with open('reports/results/transformer_results.txt', 'w') as f:
-        f.write(f"Transformer Best Val MAE: {best_val_loss:.4f}\n")
+        # Log model to MLflow registry
+        model.load_state_dict(torch.load('models/transformer_best.pth'))
+        model.eval()
+        
+        # Create example input for model signature
+        example_input = torch.randn(1, SEQ_LEN, input_dim)
+        
+        log_model_to_registry(
+            model=model,
+            model_name=TRANSFORMER_MODEL_NAME,
+            input_example=example_input.numpy(),
+            pip_requirements=["torch>=2.9.1", "numpy>=2.4.1"]
+        )
+        
+        # Compare with LSTM (Read from file if exists)
+        try:
+            with open('reports/results/lstm_results.txt', 'r') as f:
+                lstm_result = f.read().strip()
+                print(f"\nvs {lstm_result}")
+                mlflow.log_text(lstm_result, "lstm_comparison.txt")
+        except: pass
+        
+        # Save results
+        with open('reports/results/transformer_results.txt', 'w') as f:
+            f.write(f"Transformer Best Val MAE: {best_val_loss:.4f}\n")
+        
+        mlflow.log_artifact('reports/results/transformer_results.txt')
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for training."""
     try:
         train_transformer()
     except Exception as e:
         print(f"Error: {e}")
+        mlflow.end_run(status="FAILED")
+        raise
+
+if __name__ == "__main__":
+    main()
