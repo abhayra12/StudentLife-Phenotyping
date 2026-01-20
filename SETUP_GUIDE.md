@@ -1,606 +1,383 @@
-# Complete Setup Guide - Fresh Machine Installation
+# Quick Setup Guide - Streamlined for Fast ML Development
 
-## 🎯 Scenario: Setting Up StudentLife-Phenotyping on a New Machine
-
-This guide walks through the **complete end-to-end setup** from scratch.
+## 🎯 Goal
+Get your ML environment running in **under 10 minutes** with minimal build time.
 
 ---
 
 ## 📋 Prerequisites
 
-Before starting, ensure you have:
-- Docker installed (`docker --version`)
-- Docker Compose installed (`docker-compose --version`)
-- Git installed
-- 20GB free disk space
-- Internet connection
-
----
-
-## 🚀 Part 1: Outside Container Setup
-
-### Step 1: Clone Repository
-
+Before starting, verify:
 ```bash
-# Navigate to your projects directory
-cd ~/projects  # Linux/Mac
-# OR
-cd C:\Users\YourName\projects  # Windows
-
-# Clone the repository
-git clone https://github.com/your-username/StudentLife-Phenotyping.git
-cd StudentLife-Phenotyping
-
-# Verify you're in the right directory
-ls -la  # Linux/Mac
-dir     # Windows
-```
-
-**Expected Output:** You should see files like `docker-compose.yml`, `Dockerfile`, `README.md`, etc.
-
----
-
-### Step 2: Environment Configuration
-
-```bash
-# Copy environment template
-cp .env.example .env  # Linux/Mac
-Copy-Item .env.example .env  # Windows PowerShell
-
-# View the environment file (optional)
-cat .env  # Linux/Mac
-type .env  # Windows
-
-# No changes needed for local development
-```
-
-**What's in `.env`:**
-- MLflow tracking URI
-- Model registry names
-- Resource limits
-- Various configuration options
-
----
-
-### Step 3: Build All Containers (Optimized)
-
-**🚀 We'll use Docker BuildKit for faster builds (10 min vs 25+ min)**
-
-#### Enable BuildKit First:
-
-**Windows PowerShell:**
-```powershell
-# Set environment variables for optimized builds
-$env:DOCKER_BUILDKIT=1
-$env:COMPOSE_DOCKER_CLI_BUILD=1
-
-# Verify BuildKit is enabled
-Write-Host "✓ BuildKit enabled: DOCKER_BUILDKIT=$env:DOCKER_BUILDKIT" -ForegroundColor Green
-```
-
-**Linux/Mac:**
-```bash
-# Set environment variables
-export DOCKER_BUILDKIT=1
-export COMPOSE_DOCKER_CLI_BUILD=1
-
-# Verify
-echo "✓ BuildKit enabled: DOCKER_BUILDKIT=$DOCKER_BUILDKIT"
-```
-
-**💡 Tip:** Add these to your shell profile (`~/.bashrc`, `~/.zshrc`, or PowerShell profile) to make them permanent.
-
----
-
-#### Optional: Pre-download Base Images
-
-```bash
-# Download Python base image in parallel (saves ~2 minutes)
-docker pull python:3.13-slim
+docker --version        # Needs v20.10+
+docker-compose --version  # Needs v2.0+
+df -h .                 # Needs 20GB+ free space
 ```
 
 ---
 
-#### Build Containers
+## 🚀 Quick Start (3 Steps)
+
+### Step 1: Environment Setup (1 minute)
 
 ```bash
-# Build all three containers (MLflow, Training, API)
-docker-compose build
+# Navigate to project
+cd ~/projects/StudentLife-Phenotyping
 
-# With BuildKit enabled:
-# - First build: ~10 minutes
-# - Subsequent builds: ~3 minutes
-# - Code-only changes: ~15 seconds
+# Copy environment file
+cp .env.example .env
+
+# Create required directories
+mkdir -p models reports data notebooks
 ```
 
-**Expected Output:**
-```
-[+] Building 600.0s (BuildKit enabled)
- ✔ Image studentlife-phenotyping-mlflow     Built   120s
- ✔ Image studentlife-phenotyping-training   Built   480s
-```
-
-**Verify images:**
-```bash
-docker images | grep studentlife
-```
-
-**Expected:**
-```
-REPOSITORY                         TAG       SIZE
-studentlife-phenotyping-training   latest    14.1GB
-studentlife-phenotyping-mlflow     latest    1.24GB
-```
-
-**📊 BuildKit Performance:**
-- **First build:** 10 min (vs 25+ min without BuildKit)
-- **Rebuild after dependency change:** 3 min (vs 25+ min)
-- **Rebuild after code change:** 15 sec (vs 25+ min)
-
-**See `BUILD_OPTIMIZATION.md` for advanced optimizations (cache mounts, multi-stage builds).**
-
----
-
-### Step 4: Start MLflow Tracking Server
+### Step 2: Build Containers (3-5 minutes)
 
 ```bash
-# Start MLflow in detached mode (background)
+# Build both containers (training is behind a profile)
+docker-compose --profile training build
+
+# Expected output:
+# ✓ MLflow image built (~2 min)
+# ✓ Training image built (~3 min)
+```
+
+**What's being built:**
+- **MLflow container**: Lightweight tracking server (~1.2GB)
+- **Training container**: Minimal Python environment with essential tools only (~800MB)
+
+**What's NOT included in build** (installed later interactively):
+- PyTorch, Transformers (heavy ~2GB)
+- XGBoost, Light GBM
+- Jupyter, Matplotlib
+
+### Step 3: Start Services (30 seconds)
+
+```bash
+# Start MLflow tracking server
 docker-compose up -d mlflow
 
-# Wait for health check (10-15 seconds)
+# Wait for health check
 sleep 15
 
-# Check status
+# Verify MLflow is running
 docker-compose ps
-```
-
-**Expected Output:**
-```
-NAME                 STATUS
-studentlife-mlflow   Up 15 seconds (healthy)
-```
-
-**Verify MLflow UI:**
-```bash
-# Open in browser
-# Linux: xdg-open http://localhost:5000
-# Mac: open http://localhost:5000
-# Windows: start http://localhost:5000
-
-# OR test with curl
-curl http://localhost:5000
-```
-
----
-
-### Step 5: Verify Network Setup
-
-```bash
-# Check Docker networks
-docker network ls | grep studentlife
-
-# Inspect the network
-docker network inspect studentlife-phenotyping_studentlife-network
-```
-
-**Expected:** You should see `studentlife-mlflow` container connected.
-
----
-
-## 🎓 Part 2: Inside Container - Interactive Mode
-
-### Step 6: Launch Interactive Training Container
-
-```bash
-# Start interactive bash shell
-docker-compose run --rm training bash
-```
-
-**You're now INSIDE the container!** Prompt changes to something like:
-```
-root@abc123:/app#
-```
-
----
-
-### Step 7: Test Network Connectivity (Inside Container)
-
-```bash
-# Test 1: Can we reach MLflow?
-curl http://mlflow:5000
-
-# Expected: HTML output with "MLflow" text
-
-# Test 2: Check hostname resolution
-ping -c 3 mlflow
-
-# Expected: 
-# PING mlflow (172.18.0.2) 56(84) bytes of data.
-# 64 bytes from studentlife-mlflow.studentlife-phenotyping_studentlife-network
-```
-
----
-
-### Step 8: Test MLflow Python Integration (Inside Container)
-
-```bash
-# Test Python MLflow connection
-python -c "
-import mlflow
-print(f'MLflow version: {mlflow.__version__}')
-mlflow.set_tracking_uri('http://mlflow:5000')
-experiments = mlflow.search_experiments()
-print(f'Found {len(experiments)} experiments')
-print('✓ MLflow connection successful!')
-"
-```
-
-**Expected Output:**
-```
-MLflow version: 2.10.0 (or higher)
-Found 1 experiments
-✓ MLflow connection successful!
-```
-
----
-
-### Step 9: Test MLflow Config Module (Inside Container)
-
-```bash
-# Test our custom MLflow configuration
-python -c "
-from src.mlflow_config import setup_mlflow, EXPERIMENT_NAME
-setup_mlflow()
-print('✓ MLflow setup complete!')
-print(f'Experiment: {EXPERIMENT_NAME}')
-"
-```
-
-**Expected Output:**
-```
-✓ MLflow initialized:
-  - Tracking URI: http://mlflow:5000
-  - Experiment: studentlife-phenotyping
-✓ MLflow setup complete!
-Experiment: studentlife-phenotyping
-```
-
----
-
-### Step 10: Log a Test Experiment (Inside Container)
-
-```bash
-# Create a test MLflow run
-python -c "
-import mlflow
-from src.mlflow_config import setup_mlflow
-
-setup_mlflow()
-
-with mlflow.start_run(run_name='first_test_run'):
-    # Log parameters
-    mlflow.log_param('environment', 'docker')
-    mlflow.log_param('test_mode', 'interactive')
-    
-    # Log metrics
-    mlflow.log_metric('test_accuracy', 0.95)
-    mlflow.log_metric('test_loss', 0.05)
-    
-    print('✓ Logged test experiment!')
-    print('Check MLflow UI: http://localhost:5000')
-"
-```
-
-**Verify:** Open http://localhost:5000 in browser → You should see new run!
-
----
-
-### Step 11: Check Project Structure (Inside Container)
-
-```bash
-# View directory structure
-ls -la
-
-# Expected:
-# drwxr-xr-x  - root root  src/
-# -rw-r--r--  - root root  train.py
-# drwxr-xr-x  - root root  models/
-# drwxr-xr-x  - root root  data/
-```
-
-```bash
-# Check if all source files are present
-ls -la src/
-ls -la src/analysis/modeling/
-
-# Expected:
-# 08_autoencoder.py
-# 09_transformer.py
-```
-
----
-
-### Step 12: Check Installed Dependencies (Inside Container)
-
-```bash
-# Verify ML libraries are installed
-python -c "
-import torch
-import mlflow
-import pandas as pd
-import sklearn
-import lightgbm
-import xgboost
-
-print(f'PyTorch: {torch.__version__}')
-print(f'MLflow: {mlflow.__version__}')
-print(f'Pandas: {pd.__version__}')
-print(f'scikit-learn: {sklearn.__version__}')
-print(f'LightGBM: {lightgbm.__version__}')
-print(f'XGBoost: {xgboost.__version__}')
-print('✓ All dependencies installed!')
-"
-```
-
----
-
-### Step 13: Simulate Training (Inside Container - No Data Required)
-
-```bash
-# Test training script imports
-python -c "
-# Test if training scripts are importable
-from src.analysis.modeling import transformer_model
-print('✓ Can import transformer module')
-
-# Test MLflow integration in training
-import mlflow
-from src.mlflow_config import setup_mlflow, log_model_to_registry
-
-setup_mlflow()
-
-# Simulate a minimal training run
-with mlflow.start_run(run_name='simulation_test'):
-    mlflow.log_param('model', 'transformer')
-    mlflow.log_param('epochs', 50)
-    mlflow.log_metric('train_loss', 1.5)
-    mlflow.log_metric('val_loss', 1.7)
-    print('✓ Training simulation logged!')
-"
-```
-
----
-
-### Step 14: Exit Container
-
-```bash
-# Exit the interactive shell
-exit
-```
-
-**You're now OUTSIDE the container again!**
-
----
-
-## 🔄 Part 3: Back Outside Container - Next Steps
-
-### Step 15: View MLflow UI
-
-```bash
-# MLflow should still be running
-docker-compose ps
+# Should show: studentlife-mlflow (healthy)
 
 # Open MLflow UI in browser
-# http://localhost:5000
-
-# You should see your test runs!
+open http://localhost:5000  # Mac
+# OR visit: http://localhost:5000
 ```
 
 ---
 
-### Step 16: Prepare for Actual Training (Data Required)
+## 🔬 Interactive ML Environment
 
-**Option A: If you have the StudentLife dataset:**
+### Enter Training Container
 
 ```bash
-# Place dataset in correct location
-# data/raw/dataset/
+# Start interactive bash session
+docker-compose --profile training run --rm training bash
 
-# Then run inside container:
-docker-compose run --rm training bash
-# Inside: python src/data/make_dataset.py
+# You're now INSIDE the container!
+# Prompt will change to: root@abc123:/app#
 ```
 
-**Option B: Download dataset (if server available):**
+### Install ML Libraries (Automatic)
+
+The pipeline script (`run_pipeline.sh`) automatically checks and installs dependencies on first run.
+```bash
+# Inside container - run full pipeline (first time)
+./run_pipeline.sh
+```
+
+**Manual install (optional):**
+```bash
+# Inside container - set timeout for large CUDA packages
+export UV_HTTP_TIMEOUT=120
+
+# Install all dependencies from pyproject.toml
+uv sync
+
+# Or with dev dependencies (Jupyter, pytest)
+uv sync --all-groups
+```
+
+> **Note**: Large packages like CUDA libraries (~1GB+) may timeout with default settings. Setting `UV_HTTP_TIMEOUT=120` gives more time for downloads.
+
+### Verify Installation
 
 ```bash
-docker-compose run --rm training python src/data/download_dataset.py
+# List installed ML packages
+uv pip list | grep -E "torch|mlflow|pandas|xgboost|lightgbm"
+```
+
+### Test MLflow Connection
+
+```bash
+# Check if MLflow server is reachable
+curl http://mlflow:5000/health
 ```
 
 ---
 
-### Step 17: Train Models with MLflow Tracking
+## � Data Requirements
+
+Before running the full pipeline, you need the StudentLife dataset:
+
+### Option 1: With StudentLife Dataset
+**Downloading data from official site was too slow so uploaded same to AWS S3 bucket**
+**Step 1: Download the dataset**
 
 ```bash
-# Once data is ready, train both models
-docker-compose run --rm training python train.py
+# Inside container - download StudentLife dataset from S3 (~400MB compressed)
+mkdir -p data/raw
+cd data/raw
+
+# Download using wget (faster from S3)
+wget https://student-pheno.s3.ap-south-1.amazonaws.com/raw/dataset.tar.bz2
+
+# OR using curl
+curl -O https://student-pheno.s3.ap-south-1.amazonaws.com/raw/dataset.tar.bz2
+```
+
+**Step 2: Extract the sensing data**
+
+```bash
+# Extract only the sensing folder (saves space)
+tar -xjf dataset.tar.bz2 dataset/sensing
+
+# Clean up compressed file (optional)
+rm dataset.tar.bz2
+
+# Verify extraction
+ls dataset/sensing/  # Should show: activity, audio, bluetooth, conversation, etc.
+```
+
+**Step 3: Run data preparation**
+
+```bash
+# Go back to app directory
+cd /app
+
+# Run the full pipeline (includes data prep)
+./run_pipeline.sh
+```
+
+> **Note**: The pipeline now auto-regenerates `participant_tiers.csv` if it’s missing.
+
+**Alternative: Automated Download**
+
+```bash
+# Inside container - use the download script
+python src/data/download_dataset.py
 
 # This will:
-# 1. Train Transformer model (~25 minutes)
-# 2. Train Autoencoder model (~15 minutes)
-# 3. Log all experiments to MLflow
-# 4. Register models in MLflow registry
-# 5. Save models to models/ directory
+# - Download dataset.tar.bz2 (~400MB)
+# - Extract sensing/ folder automatically
+# - Skip if already downloaded
 ```
 
-**Monitor in MLflow UI:** http://localhost:5000
+> **⚠️ Note**: If download fails or file is corrupt, check:
+> 1. S3 bucket must be publicly accessible
+> 2. Verify URL returns the actual file (not HTML error page)
+> 3. Check downloaded file size: `ls -lh data/raw/dataset.tar.bz2`
+> 4. If file is tiny (<1MB), it's likely an error page - check S3 permissions
+
+**Troubleshooting S3 download:**
+```bash
+# Inside container - check what was actually downloaded
+file data/raw/dataset.tar.bz2  # Should say "bzip2 compressed data"
+ls -lh data/raw/dataset.tar.bz2  # Should be ~400MB
+
+# If it's an HTML error, make S3 bucket public:
+# AWS Console → S3 → Bucket → Permissions → Public Access → Allow
+# Then add bucket policy for public read access
+```
+
+### Option 2: Without Dataset (Development/Testing)
+
+If you don't have the dataset yet, you can:
+
+**Test individual components:**
+```bash
+# Test MLflow connectivity
+python -c "import mlflow; mlflow.set_tracking_uri('http://mlflow:5000'); print('MLflow OK')"
+
+# Start Jupyter for development
+jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+# Access at http://localhost:8888
+
+# Run model scripts directly (when you have sample data)
+python src/analysis/modeling/09_transformer.py
+```
+
+**Create sample data** for testing (advanced):
+```bash
+# Generate synthetic data matching the schema
+python src/data/generate_sample_data.py  # If you create this script
+```
 
 ---
 
-### Step 18: Deploy API (After Training)
+## �📊 Run Your ML Pipeline (With Data)
+
+### Option A: Run Full Pipeline
 
 ```bash
-# Build and start API service
-docker-compose up -d api
+# Inside container - runs complete data prep and all models
+./run_pipeline.sh
 
-# Check status
-docker-compose ps
-
-# Expected:
-# studentlife-mlflow   Up (healthy)
-# studentlife-api      Up (healthy)
+# This executes:
+# 1. Data cleaning and alignment
+# 2. Feature engineering
+# 3. Baseline models (regression, classification)
+# 4. Advanced ML (boosting, LSTM)
+# 5. SOTA models (Transformer, Autoencoder)
+# All results tracked in MLflow
 ```
 
-**Access API:**
-- Swagger UI: http://localhost:8000/docs
-- Health: http://localhost:8000/health
+### Option B: Run Individual Scripts
+
+```bash
+# Inside container - run specific steps
+python src/data/run_cleaning.py
+python src/data/create_final_dataset.py
+python src/analysis/modeling/09_transformer.py
+```
+
+### Option C: Use Jupyter Notebooks
+
+```bash
+# Inside container, start Jupyter
+jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+
+# Access from your browser:
+# http://localhost:8888
+```
+
+### Option C: Develop Interactively
+
+```bash
+# Inside container
+python
+
+>>> import pandas as pd
+>>> import mlflow
+>>> # Your code here...
+```
 
 ---
 
-### Step 19: Test API
+## 🎨 Optional: Run FastAPI Server
+
+If you want to serve predictions later:
 
 ```bash
-# Test health endpoint
-curl http://localhost:8000/health
+# Inside container
+uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 
-# Make a prediction (requires trained model)
-curl -X POST "http://localhost:8000/predict" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "participant_id": "u00",
-    "features": [[...]]  // 24-hour sequence
-  }'
+# Access API docs: http://localhost:8000/docs
 ```
 
 ---
 
-### Step 20: View All Services
+## 🛑 Stop Services
 
 ```bash
-# See all running services
-docker-compose ps
+# Exit container
+exit
 
-# View logs
-docker-compose logs -f mlflow  # MLflow logs
-docker-compose logs -f api     # API logs
-
-# Stop all services
+# Stop MLflow
 docker-compose down
 
-# Stop and remove volumes (clean slate)
+# Clean up everything (including volumes)
 docker-compose down -v
 ```
 
 ---
 
-## 📊 Complete Command Reference
-
-### Outside Container Commands
+## 📊 Command Reference
 
 | Task | Command |
 |------|---------|
-| Build containers | `docker-compose build` |
-| Start MLflow | `docker-compose up -d mlflow` |
-| Start all services | `docker-compose up -d` |
+| Build containers | `docker-compose --profile training build` |
+| Start MLflow only | `docker-compose up -d mlflow` |
+| Enter container | `docker-compose --profile training run --rm training bash` |
+| Install all deps | `uv sync` (inside container) |
+| Install with dev deps | `uv sync --all-groups` (inside container) |
 | Stop services | `docker-compose down` |
-| View logs | `docker-compose logs -f <service>` |
+| View logs | `docker-compose logs -f mlflow` |
 | Check status | `docker-compose ps` |
-| Interactive shell | `docker-compose run --rm training bash` |
-| Run training | `docker-compose run --rm training python train.py` |
-| Rebuild image | `docker-compose build --no-cache training` |
-
-### Inside Container Commands
-
-| Task | Command |
-|------|---------|
-| Test MLflow | `curl http://mlflow:5000` |
-| Check Python | `python --version` |
-| List files | `ls -la` |
-| Run Python | `python -c "print('test')"` |
-| Install package | `pip install <package>` |
-| Run training | `python train.py` |
-| Test imports | `python -c "import mlflow; print('ok')"` |
-| Exit | `exit` |
-
----
-
-## 🎯 Success Checklist
-
-After completing all steps, verify:
-
-- [ ] Docker images built (14.1GB training, 1.24GB MLflow)
-- [ ] MLflow UI accessible at http://localhost:5000
-- [ ] MLflow container status: "healthy"
-- [ ] Network connectivity verified (training → mlflow)
-- [ ] Test experiment visible in MLflow UI
-- [ ] All Python dependencies working
-- [ ] Can start interactive container shell
-- [ ] Can run Python scripts in container
-- [ ] Models can be trained (when data available)
-- [ ] API can be deployed (after training)
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Issue: MLflow shows "unhealthy"
+### MLflow shows "unhealthy"
 ```bash
 docker logs studentlife-mlflow
 docker-compose restart mlflow
 ```
 
-### Issue: Container can't reach MLflow
+### Can't connect to MLflow from container
 ```bash
-docker network inspect studentlife-phenotyping_studentlife-network
-docker-compose down
-docker-compose up -d mlflow
+# Inside container
+curl http://mlflow:5000
+# Should return HTML
 ```
 
-### Issue: Build fails
+### MLflow 403 “Invalid Host header”
+If MLflow rejects requests, allow host headers with ports in docker-compose:
+- Add `MLFLOW_SERVER_ALLOWED_HOSTS=mlflow,mlflow:*,localhost,localhost:*,127.0.0.1,127.0.0.1:*,0.0.0.0,0.0.0.0:*` to the mlflow service
+- Restart MLflow: `docker-compose up -d mlflow`
+
+### Port already in use
+### participant_tiers.csv missing
 ```bash
-docker-compose build --no-cache
-docker system prune -a  # Warning: removes all unused images
+# Inside container
+python src/data/regenerate_tiers.py
 ```
-
-### Issue: Port already in use
 ```bash
-# Windows
-Get-NetTCPConnection -LocalPort 5000, 8000
-
-# Linux/Mac
+# Check what's using port 5000
 lsof -i :5000
-lsof -i :8000
-
-# Change ports in docker-compose.yml
+# Kill the process or change port in docker-compose.yml
 ```
+
+### Compose warning about `version`
+If you see a warning like “the attribute `version` is obsolete”, it's safe to ignore.
 
 ---
 
 ## ✨ Summary
 
-**You now have a fully containerized ML platform!**
+**Total setup time**: ~10 minutes
+- Build containers: 3-5 min
+- Start MLflow: 30 sec
+- Install ML libs (inside container): 5-8 min
 
-**From scratch to production in ~15 minutes:**
-1. Clone repo (1 min)
-2. Enable BuildKit (30 sec)
-3. Build containers (10 min with BuildKit)
-4. Start MLflow (1 min)
-5. Test interactively (3 min)
-6. Train models (40 min when data ready)
-7. Deploy API (1 min)
+**Workflow**:
+1. Build once: `docker-compose --profile training build` 
+2. Start MLflow: `docker-compose up -d mlflow`
+3. Enter container: `docker-compose --profile training run --rm training bash`
+4. Dependencies auto-install on first `./run_pipeline.sh`
+5. **Add your data** to `data/raw/dataset/sensing/` (StudentLife dataset)
+6. Develop your models!
 
-**Total setup time:** ~15 minutes (excluding training)
-
-**Works on:** Any machine with Docker (Linux/Mac/Windows, Local/Cloud)
+**Benefits over old approach**:
+- ⚡ **23 min faster** build time (28 min → 5 min)
+- 🎯 **Simpler** - only 2 containers instead of 3
+- 🔧 **Flexible** - auto-installs dependencies as needed
+- 💾 **Smaller** images - minimal base layers
 
 ---
 
 ## 🚀 Next Steps
 
-1. **Get Data:** Download or provide StudentLife dataset
-2. **Train Models:** `docker-compose run --rm training python train.py`
-3. **Experiment:** Use MLflow UI to compare runs
-4. **Deploy:** `docker-compose up -d api`
-5. **Iterate:** Modify hyperparameters, retrain, compare
+1. **Get Data**: Download StudentLife dataset → place in `data/raw/dataset/sensing/`
+2. **Prepare Data**: Follow your `plan.md` Phases 2-4 (data cleaning, alignment, features)
+3. **Train Models**: Run `./run_pipeline.sh` inside container
+4. **Experiment**: Use MLflow UI to compare runs (http://localhost:5000)
+5. **Deploy**: Use FastAPI when ready for inference
 
-**Happy experimenting!** 🎯
+**Happy coding!** 🎯
