@@ -124,10 +124,15 @@ async def predict_activity(data: StudentBehavior):
         
         with torch.no_grad():
             pred = models['transformer'](tensor_in)
+            # Extract the final prediction (handle both single value and sequence outputs)
+            if pred.dim() > 0 and pred.numel() > 1:
+                pred_value = pred.mean().item()  # Average if sequence returned
+            else:
+                pred_value = pred.item()
             
         return PredictionResponse(
             participant_id=data.participant_id,
-            predicted_activity_minutes=float(pred.item())
+            predicted_activity_minutes=float(pred_value)
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

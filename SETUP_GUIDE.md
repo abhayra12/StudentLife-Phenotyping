@@ -273,12 +273,50 @@ python
 
 If you want to serve predictions later:
 
-```bash
-# Inside container
-uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+### Option 1: Run in Background (Recommended for Testing)
 
-# Access API docs: http://localhost:8000/docs
+```bash
+# Inside container - start FastAPI server in background (hide logs)
+uvicorn src.api.main:app --host 0.0.0.0 --port 8000 &>/dev/null &
+
+# Wait a few seconds for server to start
+sleep 3
+
+# Now you can test while server runs in background
+curl http://localhost:8000/health
+
+# Test prediction endpoint (requires 24 timesteps × 11 features = 264 values)
+# This is a flattened sequence representing 24 hours of behavioral data
+curl -X POST "http://localhost:8000/predict" -H "Content-Type: application/json" -d '{"participant_id":"u00","features":[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,0.5]}'
+
+# Expected response:
+# {"participant_id":"u00","predicted_activity_minutes":1.45,"confidence":null}
+
+# Stop the background server when done
+# List jobs and kill the uvicorn process
+jobs  # Shows running background jobs
+kill %1  # Replace %1 with the job number shown
 ```
+
+### Option 2: Run in Foreground (Separate Terminal)
+
+```bash
+# Terminal 1 - Inside container, start server
+uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+# Server will block this terminal
+
+# Terminal 2 - Open new container session
+docker-compose --profile training exec training bash
+
+# Now test from the second session
+curl http://localhost:8000/health
+```
+
+**Access from your local machine:**
+- API Documentation: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
+
+> **Note**: Port 8000 is mapped in docker-compose.yml, so the API is accessible from both inside the container and your host machine.
 
 ---
 
