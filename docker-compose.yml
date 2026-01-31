@@ -29,7 +29,7 @@ services:
       - studentlife-network
 
   # ============================================================================
-  # Training Service - ML development, training, and optional API serving
+  # Training Service - ML development (interactive use with docker-compose run)
   # ============================================================================
   training:
     build:
@@ -48,7 +48,6 @@ services:
       - mlflow_artifacts:/mlflow/artifacts  # Shared MLflow artifacts
     ports:
       - "8888:8888"  # Jupyter
-      - "8000:8000"  # FastAPI (if needed)
     depends_on:
       mlflow:
         condition: service_healthy
@@ -61,6 +60,41 @@ services:
         limits:
           cpus: '2'
           memory: 4G
+
+  # ============================================================================
+  # API Service - FastAPI prediction server (runs as persistent service)
+  # ============================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.train
+    container_name: studentlife-api
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./src:/app/src              # Source code (live updates)
+      - ./models:/app/models        # Models directory
+    ports:
+      - "8000:8000"  # FastAPI
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    networks:
+      - studentlife-network
+    command: >
+      bash -c "source /app/.venv/bin/activate && 
+               uv sync --quiet && 
+               uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    profiles:
+      - api  # Start with --profile api
 
 # ============================================================================
 # Named Volumes - Persistent storage

@@ -24,22 +24,20 @@
 - [Model Development](#-model-development)
 - [Architecture](#-architecture)
 - [Quick Start](#-quick-start)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Data Pipeline](#data-pipeline)
-  - [Training](#training)
-  - [Inference](#inference)
+  - [One-Command Setup](#one-command-setup-recommended)
+  - [Step-by-Step Setup](#step-by-step-setup-manual-control)
+- [Pipeline Walkthrough](#-pipeline-walkthrough)
 - [Reproducibility](#-reproducibility)
 - [Containerization](#-containerization)
 - [Deployment](#-deployment)
-  - [Local Deployment](#local-deployment)
-  - [Cloud Deployment](#cloud-deployment)
 - [API Reference](#-api-reference)
 - [Project Structure](#-project-structure)
 - [Results & Performance](#-results--performance)
+- [Understanding Your Results](#-understanding-your-results)
 - [Testing](#-testing)
 - [Troubleshooting](#-troubleshooting)
 - [Roadmap](#-roadmap)
+- [Demo & Presentation Guide](#-demo--presentation-guide)
 - [Contributing](#-contributing)
 - [Citation](#-citation)
 - [License](#-license)
@@ -404,183 +402,264 @@ Experiment Tracking:
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### One-Command Setup (Recommended)
 
-**System Requirements:**
-- **OS**: Windows, macOS, or Linux
-- **RAM**: Minimum 8GB (16GB recommended for training)
-- **Disk**: 25GB+ free space (dataset + models + workspace)
-- **Python**: 3.13+ (strict requirement for dependency compatibility)
-- **Internet**: Stable connection for dataset download
-
-**Software Dependencies:**
-- Git
-- Python 3.13 ([Download](https://www.python.org/downloads/))
-- `uv` package manager (auto-installed below)
-
-### Installation
-
-#### 1. Clone Repository
+The fastest way to get started — builds everything and runs the full pipeline:
 
 ```bash
+# Clone and enter project
 git clone https://github.com/abhayra12/StudentLife-Phenotyping.git
 cd StudentLife-Phenotyping
+
+# Run complete setup (builds containers, starts MLflow, runs pipeline)
+./setup_and_run.sh
 ```
 
-#### 2. Set Up Environment
+**What this does:**
+1. ✅ Checks prerequisites (Docker, disk space)
+2. ✅ Builds Docker containers (~5 min)
+3. ✅ Starts MLflow tracking server
+4. ✅ Downloads dataset (if needed)
+5. ✅ Runs full ML pipeline (~30-60 min)
 
-**Option A: Using `uv` (Recommended — 10x faster)**
+**After completion:**
+- 📊 MLflow UI: http://localhost:5000
+- 🔮 Start API: `./setup_and_run.sh --api`
+- 🖥️ Enter shell: `./setup_and_run.sh --shell`
+
+### Prerequisites
+
+| Requirement | Minimum | Recommended |
+|-------------|---------|-------------|
+| **Docker** | v20.10+ | Latest |
+| **Docker Compose** | v2.0+ | Latest |
+| **RAM** | 8GB | 16GB |
+| **Disk Space** | 15GB | 25GB |
+| **OS** | Linux, macOS, Windows (WSL2) | Linux |
 
 ```bash
-# Install uv
-pip install uv
-
-# Create virtual environment and install dependencies
-uv sync
+# Verify prerequisites
+docker --version        # Needs v20.10+
+docker-compose --version  # Needs v2.0+
+df -h .                 # Needs 15GB+ free space
 ```
 
-**Option B: Using standard `pip`**
+### Step-by-Step Setup (Manual Control)
+
+If you prefer granular control over each step:
+
+#### Step 1: Build Containers
 
 ```bash
-# Create virtual environment
-python -m venv .venv
+./setup_and_run.sh --build
 
-# Activate
-# Windows:
-.venv\Scripts\activate
-# Unix/macOS:
-source .venv/bin/activate
-
-# Install from pyproject.toml
-pip install -e .
+# Or manually:
+docker-compose --profile training build
 ```
 
-**Verification:**
-```bash
-python --version  # Should show 3.13.x
-python -c "import torch; print(torch.__version__)"  # Should show 2.9.x
-```
-
-### Data Pipeline
-
-#### 3. Download Dataset
+#### Step 2: Start MLflow
 
 ```bash
-uv run src/data/download_dataset.py
+./setup_and_run.sh --start
+
+# Or manually:
+docker-compose up -d mlflow
+# Wait for healthy status
+docker-compose ps  # Should show "healthy"
 ```
 
-**What it does:**
-- Downloads compressed dataset from Dartmouth server
-- Extracts only `sensing/` folder (saves disk space)
-- Validates archive integrity
-- Estimated time: 30-90 min (depends on connection)
-
-**Output:**
-```
-data/raw/dataset/sensing/
-  ├── activity/
-  ├── audio/
-  ├── gps/
-  ├── ...
-```
-
-#### 4. Run Full Pipeline (Automated)
-
-**Windows PowerShell:**
-```powershell
-.\run_full_pipeline.ps1
-```
-
-**Unix/macOS:**
-```bash
-# Convert script or run steps manually (see below)
-python src/data/run_cleaning.py
-python src/data/run_alignment.py
-python src/data/create_final_dataset.py
-python src/verify_phase4.py
-# ... (see script for full sequence)
-```
-
-**Pipeline Stages (10 steps):**
-1. Data Cleaning → `data/processed/cleaned/`
-2. Time Alignment → `data/processed/aligned/`
-3. Dataset Creation → `data/processed/*.parquet`
-4. Feature Verification
-5-6. Baseline Models (Regression, Classification)
-7. Gradient Boosting Comparison
-8. LSTM Training
-9. **Transformer Training** → `models/transformer_best.pth`
-10. Autoencoder Anomaly Detection → `models/autoencoder.pth`
-
-**Total Runtime:** ~2-4 hours (depends on hardware)
-
-**Output:**
-```
-models/
-  ├── transformer_best.pth  (11.2 MB)
-  ├── autoencoder.pth       (3.4 MB)
-  ├── xgboost_model.json
-  └── ...
-```
-
-### Training
-
-**Manual Training (Transformer only):**
+#### Step 3: Enter Container Shell
 
 ```bash
-uv run train.py
+./setup_and_run.sh --shell
+
+# Or manually:
+docker-compose --profile training run --rm training bash
 ```
 
-**Expected Output:**
-```
-🚀 Starting SOTA Transformer Training...
-Epoch 1/50: Loss=2.134, Val_MAE=1.856
-Epoch 5/50: Loss=1.423, Val_MAE=1.289
-...
-Epoch 28/50: Loss=1.102, Val_MAE=1.176 ← Best Model
-Early stopping at epoch 33
-✅ Training Complete. Model saved to 'models/transformer_best.pth'
-```
-
-**Custom Hyperparameters:**
-Edit `src/analysis/modeling/09_transformer.py`:
-```python
-# Line 42
-config = {
-    'd_model': 32,       # Model dimension
-    'nhead': 4,          # Attention heads
-    'num_layers': 2,     # Transformer blocks
-    'lr': 0.001,         # Learning rate
-    'batch_size': 32,
-}
-```
-
-### Inference
-
-**Option 1: Python API**
+#### Step 4: Run Pipeline (Inside Container)
 
 ```bash
-uv run predict.py
+# Inside the container:
+./run_pipeline.sh
 ```
 
-Then open browser: [http://localhost:8000/docs](http://localhost:8000/docs)
+#### Step 5: Start API Server
 
-**Option 2: Direct Script**
+```bash
+./setup_and_run.sh --api
 
-```python
-import torch
-from src.api.main import BehaviorTransformer
-
-# Load model
-model = BehaviorTransformer(input_dim=11)
-model.load_state_dict(torch.load('models/transformer_best.pth'))
-model.eval()
-
-# Predict (24-hour sequence required)
-features = torch.randn(24, 1, 11)  # [seq, batch, features]
-prediction = model(features)
-print(f"Predicted Activity: {prediction.item():.2f} minutes")
+# API available at:
+# - http://localhost:8000 (endpoints)
+# - http://localhost:8000/docs (Swagger UI)
 ```
+
+### Setup Script Options
+
+| Command | Description |
+|---------|-------------|
+| `./setup_and_run.sh` | Full setup + run pipeline |
+| `./setup_and_run.sh --build` | Only build containers |
+| `./setup_and_run.sh --start` | Start MLflow only |
+| `./setup_and_run.sh --shell` | Enter container shell |
+| `./setup_and_run.sh --api` | Start FastAPI server |
+| `./setup_and_run.sh --status` | Show running services |
+| `./setup_and_run.sh --stop` | Stop all services |
+| `./setup_and_run.sh --clean` | Stop and remove volumes |
+
+### Accessing Services
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| **MLflow UI** | http://localhost:5000 | Experiment tracking, model comparison |
+| **FastAPI** | http://localhost:8000 | Prediction API |
+| **API Docs** | http://localhost:8000/docs | Interactive Swagger documentation |
+| **Jupyter** | http://localhost:8888 | Notebooks (when running) |
+
+---
+
+## 📋 Pipeline Walkthrough
+
+The ML pipeline consists of **10 automated steps**, each with a specific purpose. Understanding this flow helps you debug issues and customize the pipeline.
+
+### Pipeline Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          DATA INGESTION                                      │
+│  ┌─────────────────┐                                                         │
+│  │ StudentLife     │──▶ download_dataset.py ──▶ data/raw/dataset/sensing/   │
+│  │ Dataset (S3)    │                                                         │
+│  └─────────────────┘                                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          DATA PROCESSING                                     │
+│  ┌──────────────┐    ┌──────────────┐    ┌───────────────────┐              │
+│  │ Step 1:      │    │ Step 2:      │    │ Step 3:           │              │
+│  │ Cleaning     │──▶ │ Alignment    │──▶ │ Dataset Creation  │              │
+│  │              │    │              │    │                   │              │
+│  │ run_cleaning │    │ run_alignment│    │ create_final_     │              │
+│  │ .py          │    │ .py          │    │ dataset.py        │              │
+│  └──────────────┘    └──────────────┘    └───────────────────┘              │
+│        │                   │                      │                          │
+│        ▼                   ▼                      ▼                          │
+│  data/processed/     data/processed/       *.parquet files                   │
+│  cleaned/            aligned/              (train/val/test)                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          FEATURE ENGINEERING                                 │
+│  ┌──────────────────┐                                                        │
+│  │ Step 4:          │                                                        │
+│  │ verify_phase4.py │──▶ Validates features, generates verification plot    │
+│  └──────────────────┘                                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          MODEL TRAINING                                      │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ BASELINES (Step 5)                                                   │    │
+│  │ ┌────────────────────┐  ┌─────────────────────────┐                  │    │
+│  │ │ 01_regression_     │  │ 03_classification_      │                  │    │
+│  │ │ baselines.py       │  │ baselines.py            │                  │    │
+│  │ │ • Linear, Ridge    │  │ • Logistic, SVM         │                  │    │
+│  │ └────────────────────┘  └─────────────────────────┘                  │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ ADVANCED ML (Step 6)                                                 │    │
+│  │ ┌─────────────────────────────────────────────┐                      │    │
+│  │ │ 06_boosting_comparison.py                   │                      │    │
+│  │ │ • XGBoost, LightGBM, CatBoost               │                      │    │
+│  │ └─────────────────────────────────────────────┘                      │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ DEEP LEARNING (Steps 7-8)                                            │    │
+│  │ ┌────────────────────┐  ┌─────────────────────────┐                  │    │
+│  │ │ 07_lstm_           │  │ 09_transformer.py       │                  │    │
+│  │ │ timeseries.py      │  │ ★ BEST MODEL ★          │                  │    │
+│  │ │ • LSTM (recurrent) │  │ • Attention-based       │                  │    │
+│  │ │                    │  │ • MAE: 1.176            │                  │    │
+│  │ └────────────────────┘  └─────────────────────────┘                  │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ ANOMALY DETECTION (Step 9)                                           │    │
+│  │ ┌─────────────────────────────────────────────┐                      │    │
+│  │ │ 08_autoencoder.py                           │                      │    │
+│  │ │ • Unsupervised anomaly detection            │                      │    │
+│  │ │ • Flags behavioral breakdowns               │                      │    │
+│  │ └─────────────────────────────────────────────┘                      │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          OUTPUTS                                             │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐           │
+│  │ models/          │  │ reports/results/ │  │ MLflow           │           │
+│  │ • transformer_   │  │ • *.csv metrics  │  │ • Experiments    │           │
+│  │   best.pth       │  │ • anomalies.json │  │ • Runs           │           │
+│  │ • autoencoder    │  │                  │  │ • Artifacts      │           │
+│  │   .pth           │  │                  │  │                  │           │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘           │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          INFERENCE API                                       │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ FastAPI (src/api/main.py)                                            │    │
+│  │ ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                    │    │
+│  │ │ /predict    │  │ /anomaly    │  │ /health     │                    │    │
+│  │ │ Activity    │  │ Behavioral  │  │ Service     │                    │    │
+│  │ │ forecast    │  │ risk flag   │  │ status      │                    │    │
+│  │ └─────────────┘  └─────────────┘  └─────────────┘                    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Detailed Step Reference
+
+| Step | Script | Purpose | Input | Output |
+|:----:|--------|---------|-------|--------|
+| 1 | `src/data/run_cleaning.py` | Validate timestamps, remove outliers, handle missing data | Raw sensor CSVs | `data/processed/cleaned/` |
+| 2 | `src/data/run_alignment.py` | Resample all sensors to 1-hour bins | Cleaned data | `data/processed/aligned/` |
+| 3 | `src/data/create_final_dataset.py` | Create train/val/test splits, engineer features | Aligned data | `*.parquet` files |
+| 4 | `src/verify_phase4.py` | Validate feature engineering, generate verification plot | Parquet files | `verification_phase4.png` |
+| 5a | `src/analysis/modeling/01_regression_baselines.py` | Train Linear, Ridge regression baselines | Train data | `regression_baselines.csv` |
+| 5b | `src/analysis/modeling/03_classification_baselines.py` | Train Logistic, SVM classification baselines | Train data | `classification_baselines.csv` |
+| 6 | `src/analysis/modeling/06_boosting_comparison.py` | Compare XGBoost, LightGBM, CatBoost | Train data | `boosting_comparison.csv` |
+| 7 | `src/analysis/modeling/07_lstm_timeseries.py` | Train LSTM for sequence prediction | Train data | `lstm_best.pth` |
+| 8 | `src/analysis/modeling/09_transformer.py` | Train **Transformer** (best model) | Train data | `transformer_best.pth` |
+| 9 | `src/analysis/modeling/08_autoencoder.py` | Train Autoencoder for anomaly detection | Train data | `autoencoder.pth`, thresholds |
+
+### Feature Columns (11 Features)
+
+The model uses these 11 behavioral features per hour:
+
+| # | Feature | Description | Range |
+|---|---------|-------------|-------|
+| 1 | `hour_sin` | Sine of hour (circadian encoding) | [-1, 1] |
+| 2 | `hour_cos` | Cosine of hour (circadian encoding) | [-1, 1] |
+| 3 | `day_of_week_sin` | Sine of day (weekly cycle) | [-1, 1] |
+| 4 | `day_of_week_cos` | Cosine of day (weekly cycle) | [-1, 1] |
+| 5 | `activity_stationary_pct` | % time stationary | [0, 1] |
+| 6 | `activity_active_minutes` | Minutes of physical activity | [0, 60] |
+| 7 | `audio_voice_minutes` | Minutes of conversation detected | [0, 60] |
+| 8 | `audio_noise_minutes` | Minutes of ambient noise | [0, 60] |
+| 9 | `location_entropy` | Mobility diversity index | [0, ~3] |
+| 10 | `sleep_duration_rolling` | Rolling average sleep hours | [0, 12] |
+| 11 | `week_of_term` | Academic week (1-10) | [1, 10] |
 
 ---
 
@@ -640,104 +719,86 @@ cmp models/run1.pth models/run2.pth  # No output = identical
 
 ## 🐳 Containerization
 
-> **⚠️ TODO**: Docker containerization and API deployment are planned for the next phase.
->
-> **Current Status**: Models are trained and saved locally. API endpoints are being designed.
->
-> **Planned Features**:
-> - FastAPI REST service with `/predict` and `/anomaly` endpoints
-> - Docker container for reproducible deployment
-> - Health checks and monitoring
-> - Cloud deployment guides (Google Cloud Run, AWS Lambda)
+The project uses Docker for reproducible development and deployment. All ML training and inference runs inside containers.
 
-### Docker Setup (Planned)
+### Docker Architecture
 
-**Build Image:**
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Docker Compose Stack                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌─────────────────────┐         ┌─────────────────────┐            │
+│  │   mlflow            │         │   training          │            │
+│  │   (Tracking Server) │◄───────►│   (ML Environment)  │            │
+│  │                     │         │                     │            │
+│  │   Port: 5000        │         │   Ports: 8000, 8888 │            │
+│  │   • Experiments     │         │   • Pipeline        │            │
+│  │   • Model Registry  │         │   • Jupyter         │            │
+│  │   • Artifacts       │         │   • FastAPI         │            │
+│  └─────────────────────┘         └─────────────────────┘            │
+│           │                               │                          │
+│           ▼                               ▼                          │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │                    Shared Volumes                            │    │
+│  │  • mlflow_data (SQLite)  • mlflow_artifacts  • ./data       │    │
+│  │  • ./models  • ./reports  • ./notebooks  • ./src            │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│  Network: studentlife-network (bridge)                               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Quick Docker Commands
+
 ```bash
-# Coming soon
-docker build -t studentlife-api .
+# Build all containers
+docker-compose --profile training build
+
+# Start MLflow only
+docker-compose up -d mlflow
+
+# Enter training container (interactive)
+docker-compose --profile training run --rm training bash
+
+# Start API server (accessible at localhost:8000)
+docker-compose --profile training run --rm -p 8000:8000 training \
+    bash -c "source /app/.venv/bin/activate && uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
+
+# View logs
+docker-compose logs -f mlflow
+
+# Stop all services
+docker-compose down
+
+# Clean up (remove volumes)
+docker-compose down -v
 ```
 
-**Image Details:**
-- **Base**: `python:3.13-slim` (Debian-based, 120MB)
-- **Final Size**: ~1.8GB (includes PyTorch CPU)
-- **Layers**: 8 (optimized for caching)
+### Container Details
 
-**Run Container:**
+| Container | Base Image | Size | Purpose |
+|-----------|------------|------|---------|
+| `studentlife-mlflow` | `python:3.13-slim` | ~500MB | Experiment tracking |
+| `studentlife-training` | `python:3.13-slim` | ~2GB | ML training & API |
+
+### Port Mapping
+
+| Service | Container Port | Host Port | URL |
+|---------|----------------|-----------|-----|
+| MLflow | 5000 | 5000 | http://localhost:5000 |
+| FastAPI | 8000 | 8000 | http://localhost:8000 |
+| Jupyter | 8888 | 8888 | http://localhost:8888 |
+
+### Environment Variables
+
+Set in `docker-compose.yml` or `.env` file:
+
 ```bash
-docker run -d \
-  -p 8000:8000 \
-  --name studentlife \
-  studentlife-api
+MLFLOW_TRACKING_URI=http://mlflow:5000
+PYTHONUNBUFFERED=1
+UV_HTTP_TIMEOUT=120  # For large package downloads
 ```
-
-**Health Check:**
-```bash
-curl http://localhost:8000/health
-
-# Expected Response:
-# {"status": "ok", "models_loaded": ["transformer", "autoencoder"]}
-```
-
-### Docker Compose (Full Stack)
-
-Create `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-
-services:
-  api:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - LOG_LEVEL=INFO
-      - WORKERS=2
-    volumes:
-      - ./models:/app/models:ro  # Read-only model mount
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 4G
-```
-
-**Launch stack:**
-```bash
-docker-compose up -d
-```
-
-### Multi-Stage Build (Optimized)
-
-For production, use multi-stage builds to reduce image size:
-
-```dockerfile
-# Stage 1: Build
-FROM python:3.13-slim AS builder
-WORKDIR /build
-COPY pyproject.toml .
-RUN pip install uv && uv pip compile pyproject.toml -o requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Stage 2: Runtime
-FROM python:3.13-slim
-WORKDIR /app
-COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
-COPY src/ src/
-COPY models/ models/
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-**Size comparison:**
-- Single-stage: 1.8GB
-- Multi-stage: 1.2GB (33% reduction)
 
 ---
 
@@ -1052,17 +1113,26 @@ This project extends the original [StudentLife paper (Wang et al., 2014)](https:
 
 ## 📡 API Reference
 
-> **⚠️ TODO**: API is under development. Documentation below reflects planned design.
+The FastAPI service provides real-time predictions and anomaly detection. It loads trained models on startup and serves predictions via REST endpoints.
 
-### Base URL (Planned)
+### Starting the API
 
-- **Local**: `http://localhost:8000`
-- **Production**: `https://your-cloud-endpoint.app`
+```bash
+# Option 1: Using setup script (recommended)
+./setup_and_run.sh --api
 
-### Interactive Documentation
+# Option 2: Inside container
+docker-compose --profile training run --rm -p 8000:8000 training \
+    bash -c "source /app/.venv/bin/activate && uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
+```
 
-- **Swagger UI**: `/docs`
-- **ReDoc**: `/redoc`
+### Base URLs
+
+| Environment | URL |
+|-------------|-----|
+| **Local (Docker)** | http://localhost:8000 |
+| **API Documentation** | http://localhost:8000/docs |
+| **ReDoc** | http://localhost:8000/redoc |
 
 ### Endpoints
 
@@ -1072,6 +1142,10 @@ This project extends the original [StudentLife paper (Wang et al., 2014)](https:
 
 **Description:** Verify service status and loaded models.
 
+```bash
+curl http://localhost:8000/health
+```
+
 **Response:**
 ```json
 {
@@ -1080,59 +1154,66 @@ This project extends the original [StudentLife paper (Wang et al., 2014)](https:
 }
 ```
 
-**Status Codes:**
-- `200`: Service healthy
-- `503`: Service degraded (models not loaded)
-
 ---
 
 #### 2. Predict Activity
 
 **Endpoint:** `POST /predict`
 
-**Description:** Predict daily activity minutes using 24-hour behavioral sequence.
+**Description:** Predict next-day activity minutes using 24-hour behavioral sequence.
 
-**Request Body:**
-```json
-{
-  "participant_id": "string",
-  "features": [float × 264]  // 24 hours × 11 features = 264 values
-}
-```
+**Input Requirements:**
+- **264 features** = 24 hours × 11 features per hour
+- Features must be normalized (0-1 range recommended)
+- Order must match the feature schema below
 
-**Feature Schema (11 per hour):**
-1. `hour_sin`, `hour_cos`: Time encoding
-2. `day_of_week_sin`, `day_of_week_cos`: Day encoding
-3. `activity_state`: Stationary(0), Walking(1), Running(2)
-4. `audio_voice_minutes`: Conversation time
-5. `location_entropy`: Mobility index
-6. `phone_lock_count`: Screen interactions
-7. `light_lux_avg`: Ambient light
-8. `prev_activity`: Lagged target
-9. `week_of_term`: Academic week (1-10)
+**Feature Schema (11 per hour, in order):**
+
+| # | Feature | Description | Example Value |
+|---|---------|-------------|---------------|
+| 1 | `hour_sin` | sin(2π × hour/24) | 0.866 |
+| 2 | `hour_cos` | cos(2π × hour/24) | 0.5 |
+| 3 | `day_of_week_sin` | sin(2π × day/7) | 0.433 |
+| 4 | `day_of_week_cos` | cos(2π × day/7) | 0.901 |
+| 5 | `activity_stationary_pct` | % time stationary | 0.75 |
+| 6 | `activity_active_minutes` | Minutes active (normalized) | 0.25 |
+| 7 | `audio_voice_minutes` | Conversation time (normalized) | 0.15 |
+| 8 | `audio_noise_minutes` | Ambient noise (normalized) | 0.30 |
+| 9 | `location_entropy` | Mobility diversity (normalized) | 0.45 |
+| 10 | `sleep_duration_rolling` | Sleep hours (normalized) | 0.60 |
+| 11 | `week_of_term` | Academic week (normalized 1-10 → 0-1) | 0.30 |
 
 **Example Request:**
+
 ```bash
+# Create a sample request with 264 features (24 hours × 11 features)
 curl -X POST "http://localhost:8000/predict" \
   -H "Content-Type: application/json" \
   -d '{
-    "participant_id": "u42",
-    "features": [0.5, 0.866, ..., 0.2]  // 264 values
+    "participant_id": "demo_user",
+    "features": [0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30,0.5,0.866,0.433,0.901,0.75,0.25,0.15,0.30,0.45,0.60,0.30]
   }'
 ```
 
 **Response:**
 ```json
 {
-  "participant_id": "u42",
-  "predicted_activity_minutes": 52.3
+  "participant_id": "demo_user",
+  "predicted_activity_minutes": 45.2,
+  "interpretation": "Normal activity level",
+  "confidence": null
 }
 ```
 
-**Status Codes:**
-- `200`: Prediction successful
-- `400`: Invalid input (wrong shape, NaN values)
-- `503`: Model not loaded
+**Interpretation Guide:**
+
+| Predicted Minutes | Interpretation | Clinical Significance |
+|-------------------|----------------|----------------------|
+| **< 20** | 🔴 Very Low | Possible psychomotor retardation, recommend check-in |
+| **20 - 35** | 🟡 Below Average | May indicate early warning signs |
+| **35 - 55** | 🟢 Normal | Healthy activity level |
+| **55 - 70** | 🟢 Above Average | Active lifestyle |
+| **> 70** | 🔵 Very High | Unusually active (verify data quality) |
 
 ---
 
@@ -1142,19 +1223,18 @@ curl -X POST "http://localhost:8000/predict" \
 
 **Description:** Flag behavioral anomalies using autoencoder reconstruction error.
 
-**Request Body:**
-```json
-{
-  "features": [float × 11]  // Daily aggregated features
-}
-```
+**Input Requirements:**
+- **11 features** = Daily aggregated behavioral summary
+- Same feature order as prediction endpoint (1 day instead of 24 hours)
 
 **Example Request:**
+
 ```bash
 curl -X POST "http://localhost:8000/anomaly" \
   -H "Content-Type: application/json" \
   -d '{
-    "features": [0.1, 0.05, 0.02, 0.01, 0.1, 0.03, 0.15, 0.01, 0.02, 0.08, 0.2]
+    "features": [0.5, 0.866, 0.433, 0.901, 0.85, 0.10, 0.05, 0.20, 0.25, 0.40, 0.70],
+    "is_weekend": false
   }'
 ```
 
@@ -1163,19 +1243,49 @@ curl -X POST "http://localhost:8000/anomaly" \
 {
   "is_anomaly": true,
   "reconstruction_error": 1.234,
-  "threshold": 0.98
+  "threshold": 0.909,
+  "interpretation": "Significant behavioral deviation detected",
+  "recommendation": "Consider wellness check-in"
 }
 ```
 
-**Interpretation:**
-- `is_anomaly=true`: Behavioral pattern deviates significantly from normal
-- `reconstruction_error`: MSE between input and autoencoder reconstruction
-- `threshold`: 98th percentile from training data
+**Threshold Values (from training):**
 
-**Status Codes:**
-- `200`: Detection complete
-- `400`: Invalid input
-- `503`: Model not loaded
+| Day Type | Threshold | Description |
+|----------|-----------|-------------|
+| **Weekday** | 0.909 | 95th percentile of weekday reconstruction errors |
+| **Weekend** | 0.859 | 95th percentile of weekend reconstruction errors |
+
+**What Triggers Anomalies:**
+- Sudden drop in conversation time (social isolation)
+- Sleep pattern disruption (all-nighters)
+- Location entropy change (behavioral withdrawal)
+- Extreme activity changes (>50% from baseline)
+
+---
+
+### Error Handling
+
+| Status Code | Meaning | Example Response |
+|-------------|---------|------------------|
+| 200 | Success | `{"participant_id": "u42", "predicted_activity_minutes": 45.2}` |
+| 400 | Invalid input | `{"detail": "Expected 264 features, got 100"}` |
+| 503 | Model not loaded | `{"detail": "Model not loaded"}` |
+
+### Testing the API
+
+After starting the API with `./setup_and_run.sh --api`:
+
+```bash
+# 1. Check health
+curl http://localhost:8000/health
+
+# 2. View interactive docs
+open http://localhost:8000/docs
+
+# 3. Run integration tests
+python test_api.py
+```
 
 ---
 
@@ -1318,6 +1428,123 @@ Using MAPIE (Conformal Prediction):
 - Prediction: 45.2 minutes
 - 90% CI: [42.9, 47.5]
 - Actual: 46.1 ✅ (within bounds)
+
+---
+
+## 📖 Understanding Your Results
+
+This section explains model outputs in plain language for **non-technical users** (clinicians, administrators, researchers).
+
+### What Does the Model Predict?
+
+The model forecasts **daily physical activity minutes** — how many minutes a student will be physically active (walking, running, moving) in the next 24 hours, based on their past behavioral patterns.
+
+**Why This Matters:**
+- Physical activity is a key indicator of mental health
+- Sudden drops in activity often precede depressive episodes
+- Early detection allows proactive intervention
+
+### Interpreting Predictions
+
+#### Activity Prediction Output
+
+```json
+{
+  "participant_id": "u42",
+  "predicted_activity_minutes": 45.2,
+  "interpretation": "Normal activity level"
+}
+```
+
+**What This Means:**
+
+| Output Field | Plain Language |
+|--------------|----------------|
+| `predicted_activity_minutes: 45.2` | "We expect this student to be physically active for about 45 minutes tomorrow" |
+| `interpretation: Normal` | "This is within the healthy range for this student's baseline" |
+
+#### Activity Level Reference Chart
+
+| Predicted Minutes | Status | What It Indicates | Recommended Action |
+|:-----------------:|:------:|-------------------|-------------------|
+| **< 20** | 🔴 **Very Low** | Significant reduction in physical movement; potential psychomotor retardation | Prioritize wellness check-in within 24h |
+| **20 - 35** | 🟡 **Below Average** | Noticeable decrease from typical patterns | Monitor for 2-3 days; consider reaching out |
+| **35 - 55** | 🟢 **Normal** | Healthy activity level consistent with baseline | No action needed |
+| **55 - 70** | 🟢 **Above Average** | More active than typical; positive sign | No action needed |
+| **> 70** | 🔵 **Very High** | Unusually high activity; verify data quality | May indicate exercise, sports event, or sensor issue |
+
+**Contextual Factors:**
+- Activity naturally decreases during exam weeks (15-30% drop is normal)
+- Weekends typically show 20% lower activity than weekdays
+- Individual baselines vary — compare to the student's own history
+
+### Interpreting Anomaly Detection
+
+```json
+{
+  "is_anomaly": true,
+  "reconstruction_error": 1.234,
+  "threshold": 0.909,
+  "interpretation": "Significant behavioral deviation detected"
+}
+```
+
+**What This Means:**
+
+| Output Field | Plain Language |
+|--------------|----------------|
+| `is_anomaly: true` | "This day's behavior pattern is significantly different from normal" |
+| `reconstruction_error: 1.234` | "The deviation score is 1.234 (higher = more unusual)" |
+| `threshold: 0.909` | "The cutoff for 'unusual' is 0.909; this exceeded it" |
+
+#### Anomaly Severity Guide
+
+| Reconstruction Error | Severity | What It Indicates |
+|:--------------------:|:--------:|-------------------|
+| **< 0.5** | ✅ Normal | Behavior matches expected patterns |
+| **0.5 - 0.9** | ⚠️ Mild | Some deviation; may be normal variation |
+| **0.9 - 1.5** | 🟡 Moderate | Notable deviation; worth monitoring |
+| **1.5 - 2.5** | 🟠 High | Significant behavioral change detected |
+| **> 2.5** | 🔴 Severe | Major deviation; recommend immediate attention |
+
+**Common Causes of Anomalies:**
+- 📚 **Exam Stress**: Reduced social activity, disrupted sleep
+- 🌙 **All-Nighters**: Zero sleep, unusual nighttime activity
+- 🏠 **Social Isolation**: Dramatic drop in conversation time
+- ✈️ **Travel**: Location entropy change (semester break)
+- 📱 **Tech Issues**: Sensor malfunction (verify data quality)
+
+### Model Confidence
+
+**What the MAE (Mean Absolute Error) Means:**
+
+Our model has an MAE of **1.18 minutes**, meaning:
+- On average, predictions are within ±1.2 minutes of actual activity
+- For a prediction of 45 minutes, the true value is likely between 44-46 minutes
+- This is considered **clinically significant accuracy** for behavioral prediction
+
+### Visualizing Results
+
+The pipeline generates visualizations in `reports/figures/modeling/`:
+
+| Visualization | What It Shows |
+|---------------|---------------|
+| ![Model Comparison](reports/figures/modeling/model_comparison_bar.png) | Performance comparison across all models |
+| ![SHAP Summary](reports/figures/modeling/shap_summary.png) | Feature importance — which behaviors matter most |
+| ![Reconstruction Error](reports/figures/modeling/reconstruction_error.png) | Anomaly detection distribution |
+
+### Sample Report Interpretation
+
+**Scenario:** Student `u42` shows predicted activity of **18 minutes** and an anomaly score of **1.8**.
+
+**Interpretation:**
+> "Student u42's predicted physical activity (18 minutes) is significantly below the healthy threshold (35+ minutes). Combined with a high anomaly score (1.8), this suggests a notable behavioral change from their baseline. The primary contributing factors are reduced conversation time and irregular sleep patterns. This pattern is consistent with early warning signs of depressive episodes. Recommend scheduling a wellness check-in within 24-48 hours."
+
+**Recommended Actions:**
+1. ✅ Review historical trend (is this a sudden change or gradual decline?)
+2. ✅ Check for known external factors (exams, illness, personal events)
+3. ✅ Consider reaching out via preferred communication channel
+4. ✅ Document observation in case notes
 
 ---
 
@@ -1531,20 +1758,19 @@ Consult `ISSUES_LOG.md` for historical issue resolutions.
 - [x] Advanced ML (XGBoost, LightGBM, CatBoost)
 - [x] Deep learning (LSTM, Transformer)
 - [x] Anomaly detection (Autoencoder)
-- [x] REST API (FastAPI)
-- [x] Containerization (Docker)
+- [x] Weekend normalization experiment
+- [x] REST API (FastAPI) with documentation
+- [x] Containerization (Docker + Docker Compose)
+- [x] MLflow experiment tracking
 - [x] SHAP explainability
-- [x] Cloud deployment guides
+- [x] One-command setup script
+- [x] Comprehensive result interpretation guide
 
 ### In Progress 🚧
 
 - [ ] CI/CD pipeline (GitHub Actions)
 - [ ] Monitoring dashboard (Grafana)
-- [ ] **MLflow Experiment Tracking**
-  - Automated logging of hyperparameters, metrics, and artifacts
-  - Model registry for version control
-  - Comparison UI for experiment runs
-  - Integration with all modeling scripts (`09_transformer.py`, `08_autoencoder.py`, etc.)
+- [ ] Batch prediction endpoint
 
 ### Future Enhancements 🚀
 
@@ -1569,6 +1795,118 @@ Consult `ISSUES_LOG.md` for historical issue resolutions.
 - [ ] Incorporate multimodal data (text messages, calendar events)
 - [ ] Transfer learning across universities
 - [ ] Longitudinal analysis (multi-year behavior tracking)
+
+---
+
+## 🎬 Demo & Presentation Guide
+
+This section provides guidance for demonstrating the project at conferences, meetings, or presentations.
+
+### Quick Demo (5 minutes)
+
+```bash
+# 1. Start services (if not already running)
+./setup_and_run.sh --start
+
+# 2. Start API
+./setup_and_run.sh --api
+```
+
+**Demo Flow:**
+1. Open http://localhost:5000 → Show MLflow experiments
+2. Open http://localhost:8000/docs → Show Swagger UI
+3. Execute `/health` → Show loaded models
+4. Execute `/predict` with sample data → Explain prediction
+5. Execute `/anomaly` with sample data → Explain anomaly detection
+
+### Key Talking Points
+
+**1. Problem Statement (30 sec)**
+> "Mental health issues among students often go undetected until crisis. We use passive smartphone sensing to predict behavioral changes before symptoms are self-reported."
+
+**2. Technical Innovation (1 min)**
+> "Our Transformer model achieves 1.18 MAE — that's within 1.2 minutes of actual activity. We combine this with an autoencoder for anomaly detection, flagging concerning behavioral patterns."
+
+**3. Live Demo (2 min)**
+> Show API endpoints, explain what 45 predicted minutes means, demonstrate an anomaly detection scenario.
+
+**4. Impact (30 sec)**
+> "This enables proactive intervention — reaching out to students showing early warning signs before they reach crisis."
+
+### Visualization Assets
+
+The following visualizations are available in [reports/figures/modeling/](reports/figures/modeling/) for presentations:
+
+| File | Description | Use Case |
+|------|-------------|----------|
+| `model_comparison_bar.png` | Model performance comparison | Show Transformer wins |
+| `shap_summary.png` | Feature importance beeswarm plot | Explain what drives predictions |
+| `shap_importance_bar.png` | Top features bar chart | Quick feature overview |
+| `reconstruction_error.png` | Anomaly score distribution | Explain threshold setting |
+| `weekend_normalization_comparison.png` | Weekend vs weekday analysis | Show contextual detection |
+| `latent_space.png` | Autoencoder embedding | Visualize behavioral clusters |
+| `roc_curves.png` | Classification ROC curves | Model discrimination ability |
+
+### Sample API Requests for Demo
+
+**Normal Behavior (expect ~45 min, no anomaly):**
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"participant_id":"demo_normal","features":[0.5,0.866,0.433,0.901,0.3,0.5,0.4,0.3,0.5,0.6,0.3,0.707,0.707,0.433,0.901,0.25,0.55,0.45,0.25,0.55,0.65,0.3,0.866,0.5,0.433,0.901,0.2,0.6,0.5,0.2,0.6,0.7,0.3,1.0,0.0,0.433,0.901,0.15,0.65,0.55,0.15,0.65,0.75,0.3,0.866,-0.5,0.433,0.901,0.2,0.6,0.5,0.2,0.6,0.7,0.3,0.5,-0.866,0.433,0.901,0.3,0.5,0.4,0.3,0.5,0.6,0.3,0.0,-1.0,0.433,0.901,0.4,0.4,0.3,0.4,0.4,0.5,0.3,-0.5,-0.866,0.433,0.901,0.5,0.3,0.2,0.5,0.3,0.4,0.3,-0.866,-0.5,0.433,0.901,0.6,0.2,0.1,0.6,0.2,0.3,0.3,-1.0,0.0,0.433,0.901,0.7,0.15,0.05,0.7,0.15,0.25,0.3,-0.866,0.5,0.433,0.901,0.8,0.1,0.02,0.8,0.1,0.2,0.3,-0.5,0.866,0.433,0.901,0.85,0.08,0.01,0.85,0.08,0.15,0.3,0.0,1.0,0.433,0.901,0.8,0.1,0.02,0.8,0.1,0.2,0.3,0.5,0.866,0.433,0.901,0.7,0.15,0.05,0.7,0.15,0.25,0.3,0.707,0.707,0.433,0.901,0.5,0.3,0.2,0.5,0.3,0.4,0.3,0.866,0.5,0.433,0.901,0.4,0.4,0.3,0.4,0.4,0.5,0.3,0.966,0.259,0.433,0.901,0.3,0.5,0.4,0.3,0.5,0.6,0.3,1.0,0.0,0.433,0.901,0.25,0.55,0.45,0.25,0.55,0.65,0.3,0.966,-0.259,0.433,0.901,0.2,0.6,0.5,0.2,0.6,0.7,0.3,0.866,-0.5,0.433,0.901,0.25,0.55,0.45,0.25,0.55,0.65,0.3,0.707,-0.707,0.433,0.901,0.3,0.5,0.4,0.3,0.5,0.6,0.3,0.5,-0.866,0.433,0.901,0.35,0.45,0.35,0.35,0.45,0.55,0.3]}'
+```
+
+**Anomaly Scenario (low activity, social isolation):**
+```bash
+curl -X POST http://localhost:8000/anomaly \
+  -H "Content-Type: application/json" \
+  -d '{"features":[0.5,0.866,0.433,0.901,0.95,0.02,0.01,0.1,0.1,0.2,0.8],"is_weekend":false}'
+```
+
+### Architecture Slides
+
+For presentation slides, use this high-level architecture summary:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    StudentLife Digital Phenotyping System                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   📱 SENSORS              🔧 PROCESSING           🧠 ML MODELS               │
+│   ───────────             ───────────            ───────────                 │
+│   • Accelerometer   ──▶   • Cleaning      ──▶   • Transformer               │
+│   • Audio                 • Alignment           • (Activity Prediction)     │
+│   • GPS                   • Features            • Autoencoder               │
+│   • Phone Usage                                 • (Anomaly Detection)       │
+│                                                                              │
+│                              │                         │                     │
+│                              ▼                         ▼                     │
+│                        ┌──────────┐            ┌─────────────┐              │
+│                        │ MLflow   │            │ FastAPI     │              │
+│                        │ Tracking │            │ Endpoints   │              │
+│                        └──────────┘            └─────────────┘              │
+│                                                       │                      │
+│                                                       ▼                      │
+│                                              ┌───────────────┐              │
+│                                              │ 🎯 Predictions │              │
+│                                              │ • Activity: 45m│              │
+│                                              │ • Anomaly: No  │              │
+│                                              └───────────────┘              │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Conference Poster Elements
+
+Key metrics to highlight:
+
+| Metric | Value | Significance |
+|--------|-------|--------------|
+| **MAE** | 1.176 min | Within 1.2 minutes of actual activity |
+| **R²** | 0.672 | 67% of variance explained |
+| **Improvement** | 44% | Error reduction vs. baseline |
+| **Anomalies** | 5% | 824 flagged days |
+| **Precision** | 73% | Anomaly detection accuracy |
 
 ---
 
