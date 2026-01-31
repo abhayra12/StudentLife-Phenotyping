@@ -4,7 +4,7 @@ StudentLife Behavioral Prediction API
 FastAPI service for predicting student activity levels and detecting behavioral anomalies.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
 import torch
@@ -289,14 +289,43 @@ async def get_example_payloads():
 
 
 @app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
-async def predict_activity(data: StudentBehavior):
+async def predict_activity(
+    data: StudentBehavior = Body(
+        ...,
+        openapi_examples={
+            "normal_day": {
+                "summary": "Normal Weekday (Ready to Use!)",
+                "description": "A typical Tuesday with varied activity throughout the day. Just click Execute!",
+                "value": {
+                    "participant_id": "demo_user",
+                    "features": EXAMPLE_264_FEATURES
+                }
+            },
+            "minimal": {
+                "summary": "Minimal Example",
+                "description": "Simple test with uniform values",
+                "value": {
+                    "participant_id": "test",
+                    "features": [0.5] * 264
+                }
+            }
+        }
+    )
+):
     """Predict next-day physical activity minutes.
     
-    **Input:** 264 features representing 24 hours of behavioral data (24 × 11 features per hour).
+    ## 🚀 Quick Test
+    1. Click **"Try it out"**
+    2. Select **"normal_day"** from the Examples dropdown (top right of the text box)
+    3. Click **"Execute"**
     
-    **Output:** Predicted activity minutes with human-readable interpretation.
+    ## Input
+    264 features representing 24 hours of behavioral data (24 × 11 features per hour).
     
-    **Feature Order (per hour):**
+    ## Output
+    Predicted activity minutes with human-readable interpretation.
+    
+    ## Feature Order (per hour)
     1. hour_sin, hour_cos (circadian encoding)
     2. day_of_week_sin, day_of_week_cos (weekly cycle)
     3. activity_stationary_pct (% time stationary)
@@ -342,18 +371,58 @@ async def predict_activity(data: StudentBehavior):
 
 
 @app.post("/anomaly", response_model=AnomalyResponse, tags=["Anomaly Detection"])
-async def detect_anomaly(data: AnomalyInput):
+async def detect_anomaly(
+    data: AnomalyInput = Body(
+        ...,
+        openapi_examples={
+            "normal_behavior": {
+                "summary": "Normal Day (Ready to Use!)",
+                "description": "Healthy behavioral pattern - should NOT flag as anomaly",
+                "value": {
+                    "features": EXAMPLE_11_FEATURES,
+                    "is_weekend": False
+                }
+            },
+            "concerning_pattern": {
+                "summary": "Concerning Pattern (May Flag Anomaly)",
+                "description": "Low activity, social isolation, poor sleep - late in term",
+                "value": {
+                    "features": [0.5, 0.866, 0.782, 0.623, 0.95, 0.05, 0.02, 0.1, 0.1, 0.4, 0.8],
+                    "is_weekend": False
+                }
+            },
+            "weekend": {
+                "summary": "Weekend Pattern",
+                "description": "Weekend behavior with different threshold applied",
+                "value": {
+                    "features": [0.5, 0.866, 0.0, 1.0, 0.7, 0.2, 0.3, 0.2, 0.3, 0.7, 0.5],
+                    "is_weekend": True
+                }
+            }
+        }
+    )
+):
     """Detect behavioral anomalies using autoencoder reconstruction error.
     
-    **Input:** 11 features representing daily aggregated behavioral summary.
+    ## 🚀 Quick Test
+    1. Click **"Try it out"**
+    2. Select an example from the **Examples dropdown** (top right of text box)
+    3. Click **"Execute"**
     
-    **Output:** Anomaly flag, reconstruction error, and interpretation.
+    ## Input
+    11 features representing daily aggregated behavioral summary.
     
-    **Thresholds:**
-    - Weekday: 0.909 (95th percentile of training data)
-    - Weekend: 0.859 (accounts for naturally different weekend behavior)
+    ## Output
+    - `is_anomaly`: Whether the behavior is unusual
+    - `reconstruction_error`: How different from normal (higher = more unusual)
+    - `interpretation`: Human-readable explanation
+    - `recommendation`: Suggested action if concerning
     
-    Set `is_weekend: true` if checking weekend data for context-aware detection.
+    ## Thresholds
+    - **Weekday**: ~1.0 (95th percentile of training data)
+    - **Weekend**: ~0.98 (accounts for naturally different weekend behavior)
+    
+    Set `is_weekend: true` for weekend data to use the appropriate threshold.
     """
     if 'autoencoder' not in models:
         raise HTTPException(
