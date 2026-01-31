@@ -160,17 +160,29 @@ enter_shell() {
 start_api() {
     print_header "Starting FastAPI Server"
     
-    print_step "Starting API on port 8000..."
+    print_step "Starting API service on port 8000..."
     print_step "API will be accessible at:"
     echo "   - http://localhost:8000 (from host)"
     echo "   - http://localhost:8000/docs (Swagger UI)"
     echo "   - http://localhost:8000/health (Health check)"
     echo ""
-    print_step "Press Ctrl+C to stop the server."
-    echo ""
     
-    docker-compose --profile training run --rm -p 8000:8000 training \
-        bash -c "source /app/.venv/bin/activate && uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
+    # Start API as a service (uses docker-compose.yml api service)
+    docker-compose --profile api up -d api
+    
+    print_step "Waiting for API to be ready..."
+    for i in {1..30}; do
+        if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+            echo ""
+            print_success "API is running at http://localhost:8000"
+            print_step "View API docs at http://localhost:8000/docs"
+            return 0
+        fi
+        sleep 2
+        echo -n "."
+    done
+    echo ""
+    print_warning "API may still be starting. Check with: docker-compose logs api"
 }
 
 show_status() {
