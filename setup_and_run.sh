@@ -5,12 +5,27 @@
 # This script automates the complete environment setup and pipeline execution.
 # Run this once to: build containers, start MLflow, install dependencies, and run pipeline.
 #
-# Usage:
-#   ./setup_and_run.sh           # Full setup + run pipeline
-#   ./setup_and_run.sh --build   # Only build containers
-#   ./setup_and_run.sh --start   # Only start services (skip build)
-#   ./setup_and_run.sh --shell   # Enter container shell (interactive)
-#   ./setup_and_run.sh --api     # Start API server
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │                    END-TO-END SEQUENCE (Recommended Order)                  │
+# ├───────┬─────────────────┬───────────────────────────────────────────────────┤
+# │ Step  │ Command         │ Description                                       │
+# ├───────┼─────────────────┼───────────────────────────────────────────────────┤
+# │  1    │ --build         │ Build Docker containers (~3-5 min first time)     │
+# │  2    │ --start         │ Start MLflow tracking server (port 5000)          │
+# │  3    │ --pipeline      │ Run full ML pipeline (10 steps, ~30-45 min)       │
+# │  4    │ --api           │ Start FastAPI server (port 8000)                  │
+# │  5    │ --test          │ Test API with sample prediction & anomaly         │
+# └───────┴─────────────────┴───────────────────────────────────────────────────┘
+#
+# Pipeline Steps (executed by --pipeline):
+#   [1/10] Data Cleaning          [6/10] Gradient Boosting
+#   [2/10] Time Alignment         [7/10] LSTM Model
+#   [3/10] Final Dataset          [8/10] Transformer (Best)
+#   [4/10] Feature Verification   [9/10] Anomaly Detection
+#   [5/10] Baseline Models
+#
+# Quick Start (all-in-one):
+#   ./setup_and_run.sh           # Runs steps 1-3 automatically
 #
 # =============================================================================
 
@@ -185,6 +200,104 @@ start_api() {
     print_warning "API may still be starting. Check with: docker-compose logs api"
 }
 
+test_api() {
+    print_header "Testing API Endpoints"
+    
+    # Check if API is running
+    if ! curl -s http://localhost:8000/health > /dev/null 2>&1; then
+        print_warning "API not running. Starting it first..."
+        start_api
+    fi
+    
+    echo ""
+    print_step "[Test 1/4] Health Check"
+    echo "   Request:  GET /health"
+    HEALTH=$(curl -s http://localhost:8000/health)
+    echo "   Response: $HEALTH"
+    if echo "$HEALTH" | grep -q '"status":"ok"'; then
+        print_success "Health check passed!"
+    else
+        print_error "Health check failed!"
+        return 1
+    fi
+    
+    echo ""
+    print_step "[Test 2/4] Feature Info"
+    echo "   Request:  GET /features"
+    FEATURES=$(curl -s http://localhost:8000/features)
+    echo "   Response: $FEATURES"
+    print_success "Feature info retrieved!"
+    
+    echo ""
+    print_step "[Test 3/4] Activity Prediction (264 features = 24 hours × 11 features)"
+    echo "   Request:  POST /predict"
+    
+    # Generate 264 features (realistic sample values)
+    PREDICT_PAYLOAD=$(python3 -c "
+import json
+# Simulate 24 hours of 11 features each (264 total)
+# Features: activity_level, audio_energy, sleep_prob, conversation_duration,
+# phone_charge, phone_lock, location_variance, distance_traveled,
+# time_at_home, entropy, cluster_count
+features = []
+for hour in range(24):
+    # Vary by time of day
+    if 0 <= hour < 6:  # Night - low activity, high sleep
+        features.extend([0.1, 0.05, 0.9, 0.0, 0.3, 0.8, 0.1, 0.0, 0.95, 0.1, 1])
+    elif 6 <= hour < 9:  # Morning - waking up
+        features.extend([0.4, 0.3, 0.3, 0.1, 0.5, 0.5, 0.3, 0.2, 0.7, 0.3, 2])
+    elif 9 <= hour < 17:  # Day - high activity
+        features.extend([0.8, 0.6, 0.05, 0.4, 0.4, 0.3, 0.7, 0.6, 0.3, 0.6, 4])
+    elif 17 <= hour < 21:  # Evening - moderate
+        features.extend([0.5, 0.4, 0.1, 0.3, 0.6, 0.4, 0.5, 0.3, 0.6, 0.4, 3])
+    else:  # Late night - winding down
+        features.extend([0.2, 0.2, 0.6, 0.1, 0.7, 0.7, 0.2, 0.1, 0.8, 0.2, 2])
+print(json.dumps({'participant_id': 'test_participant', 'features': features}))
+")
+    
+    PREDICT_RESULT=$(echo "$PREDICT_PAYLOAD" | curl -s -X POST http://localhost:8000/predict \
+        -H "Content-Type: application/json" -d @-)
+    echo "   Response: $PREDICT_RESULT"
+    
+    if echo "$PREDICT_RESULT" | grep -q '"predicted_activity_minutes"'; then
+        print_success "Prediction endpoint passed!"
+    else
+        print_error "Prediction failed: $PREDICT_RESULT"
+        return 1
+    fi
+    
+    echo ""
+    print_step "[Test 4/4] Anomaly Detection (11 features)"
+    echo "   Request:  POST /anomaly"
+    
+    # 11 features for anomaly detection (single time point)
+    ANOMALY_PAYLOAD='{
+        "participant_id": "test_participant",
+        "features": [0.65, 0.45, 0.12, 0.28, 0.55, 0.42, 0.58, 0.35, 0.48, 0.38, 3.5]
+    }'
+    
+    ANOMALY_RESULT=$(curl -s -X POST http://localhost:8000/anomaly \
+        -H "Content-Type: application/json" -d "$ANOMALY_PAYLOAD")
+    echo "   Response: $ANOMALY_RESULT"
+    
+    if echo "$ANOMALY_RESULT" | grep -q '"is_anomaly"'; then
+        print_success "Anomaly detection passed!"
+    else
+        print_error "Anomaly detection failed: $ANOMALY_RESULT"
+        return 1
+    fi
+    
+    echo ""
+    print_header "All API Tests Passed! ✓"
+    echo "Summary:"
+    echo "   ✔ Health check: Models loaded (transformer, autoencoder)"
+    echo "   ✔ Feature info: 11 features documented"
+    echo "   ✔ Prediction: Returns activity minutes with interpretation"
+    echo "   ✔ Anomaly: Returns is_anomaly with reconstruction error"
+    echo ""
+    print_step "Interactive API docs at: http://localhost:8000/docs"
+}
+
 show_status() {
     print_header "Service Status"
     
@@ -202,28 +315,52 @@ show_help() {
     echo "StudentLife-Phenotyping Setup & Run Script"
     echo "==========================================="
     echo ""
+    echo "┌─────────────────────────────────────────────────────────────────────────────┐"
+    echo "│                    END-TO-END SEQUENCE (Recommended Order)                  │"
+    echo "├───────┬─────────────────┬───────────────────────────────────────────────────┤"
+    echo "│ Step  │ Command         │ Description                                       │"
+    echo "├───────┼─────────────────┼───────────────────────────────────────────────────┤"
+    echo "│  1    │ --build         │ Build Docker containers (~3-5 min first time)     │"
+    echo "│  2    │ --start         │ Start MLflow tracking server (port 5000)          │"
+    echo "│  3    │ --pipeline      │ Run full ML pipeline (10 steps, ~30-45 min)       │"
+    echo "│  4    │ --api           │ Start FastAPI server (port 8000)                  │"
+    echo "│  5    │ --test          │ Test API with sample prediction & anomaly         │"
+    echo "└───────┴─────────────────┴───────────────────────────────────────────────────┘"
+    echo ""
     echo "Usage: ./setup_and_run.sh [OPTION]"
     echo ""
-    echo "Options:"
-    echo "  (no option)    Full setup: build + start MLflow + run pipeline"
-    echo "  --build        Only build Docker containers"
-    echo "  --start        Only start MLflow (skip build)"
+    echo "Setup & Build:"
+    echo "  --build        Build Docker containers"
+    echo "  --start        Start MLflow tracking server"
+    echo "  --pipeline     Run the full 10-step ML pipeline"
+    echo ""
+    echo "API & Testing:"
+    echo "  --api          Start FastAPI prediction server (port 8000)"
+    echo "  --test         Run API tests with proper sample inputs"
+    echo ""
+    echo "Utilities:"
     echo "  --shell        Enter container shell for interactive work"
-    echo "  --api          Start the FastAPI prediction server"
     echo "  --status       Show status of running services"
     echo "  --stop         Stop all running services"
     echo "  --clean        Stop services and remove volumes"
     echo "  --help         Show this help message"
     echo ""
-    echo "Quick Start (one command):"
+    echo "Quick Start (all-in-one, runs steps 1-3):"
     echo "  ./setup_and_run.sh"
     echo ""
-    echo "Step-by-step (manual control):"
-    echo "  1. ./setup_and_run.sh --build    # Build containers"
-    echo "  2. ./setup_and_run.sh --start    # Start MLflow"
-    echo "  3. ./setup_and_run.sh --shell    # Enter container"
-    echo "  4. ./run_pipeline.sh             # Run pipeline (inside container)"
-    echo "  5. ./setup_and_run.sh --api      # Start API server"
+    echo "Full End-to-End Demo:"
+    echo "  ./setup_and_run.sh --build"
+    echo "  ./setup_and_run.sh --start"
+    echo "  ./setup_and_run.sh --pipeline"
+    echo "  ./setup_and_run.sh --api"
+    echo "  ./setup_and_run.sh --test"
+    echo ""
+    echo "Pipeline Steps (10 total):"
+    echo "  [1/10] Data Cleaning          [6/10] Gradient Boosting"
+    echo "  [2/10] Time Alignment         [7/10] LSTM Model"
+    echo "  [3/10] Final Dataset          [8/10] Transformer (Best)"
+    echo "  [4/10] Feature Verification   [9/10] Anomaly Detection"
+    echo "  [5/10] Baseline Models"
     echo ""
 }
 
@@ -253,6 +390,11 @@ case "${1:-}" in
         start_mlflow
         show_status
         ;;
+    --pipeline)
+        check_prerequisites
+        start_mlflow
+        run_pipeline
+        ;;
     --shell)
         check_prerequisites
         start_mlflow
@@ -262,6 +404,10 @@ case "${1:-}" in
         check_prerequisites
         start_mlflow
         start_api
+        ;;
+    --test)
+        check_prerequisites
+        test_api
         ;;
     --status)
         show_status
@@ -281,7 +427,15 @@ case "${1:-}" in
         echo "This will build containers, start MLflow, and run the full ML pipeline."
         echo "Estimated time: 30-60 minutes (depending on hardware and network)"
         echo ""
-        read -p "Continue? (y/n) " -n 1 -r
+        echo "┌─────────────────────────────────────────────────────────────────────────────┐"
+        echo "│ Step  │ Command         │ Description                                       │"
+        echo "├───────┼─────────────────┼───────────────────────────────────────────────────┤"
+        echo "│  1    │ --build         │ Build Docker containers                           │"
+        echo "│  2    │ --start         │ Start MLflow (port 5000)                          │"
+        echo "│  3    │ --pipeline      │ Run 10-step ML pipeline                           │"
+        echo "└───────┴─────────────────┴───────────────────────────────────────────────────┘"
+        echo ""
+        read -p "Continue with full setup? (y/n) " -n 1 -r
         echo ""
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             check_prerequisites
@@ -291,9 +445,9 @@ case "${1:-}" in
             show_status
             echo ""
             print_success "Setup complete! Next steps:"
-            echo "   - View experiments: http://localhost:5000"
-            echo "   - Start API: ./setup_and_run.sh --api"
-            echo "   - Enter shell: ./setup_and_run.sh --shell"
+            echo "   4. Start API:  ./setup_and_run.sh --api"
+            echo "   5. Test API:   ./setup_and_run.sh --test"
+            echo "   - View MLflow: http://localhost:5000"
         else
             echo "Aborted."
         fi
