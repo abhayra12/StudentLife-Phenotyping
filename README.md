@@ -1863,38 +1863,9 @@ curl -X POST http://localhost:8000/anomaly \
   -d '{"features":[0.5,0.866,0.433,0.901,0.95,0.02,0.01,0.1,0.1,0.2,0.8],"is_weekend":false}'
 ```
 
-### Architecture Slides
+### Architecture Diagram
 
-For presentation slides, use this high-level architecture summary:
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    StudentLife Digital Phenotyping System                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   📱 SENSORS              🔧 PROCESSING           🧠 ML MODELS               │
-│   ───────────             ───────────            ───────────                 │
-│   • Accelerometer   ──▶   • Cleaning      ──▶   • Transformer               │
-│   • Audio                 • Alignment           • (Activity Prediction)     │
-│   • GPS                   • Features            • Autoencoder               │
-│   • Phone Usage                                 • (Anomaly Detection)       │
-│                                                                              │
-│                              │                         │                     │
-│                              ▼                         ▼                     │
-│                        ┌──────────┐            ┌─────────────┐              │
-│                        │ MLflow   │            │ FastAPI     │              │
-│                        │ Tracking │            │ Endpoints   │              │
-│                        └──────────┘            └─────────────┘              │
-│                                                       │                      │
-│                                                       ▼                      │
-│                                              ┌───────────────┐              │
-│                                              │ 🎯 Predictions │              │
-│                                              │ • Activity: 45m│              │
-│                                              │ • Anomaly: No  │              │
-│                                              └───────────────┘              │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+![StudentLife Digital Phenotyping System Architecture](public/architecture.png)
 
 ### Conference Poster Elements
 

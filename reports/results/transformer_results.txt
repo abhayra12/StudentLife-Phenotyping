@@ -1,1 +1,1 @@
-Transformer Best Val MAE: 1.1770
+Transformer Best Val MAE: 1.1763
