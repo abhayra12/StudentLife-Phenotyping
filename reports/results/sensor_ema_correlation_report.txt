@@ -1,0 +1,45 @@
+============================================================
+Sensor ↔ EMA Stress Correlation Report
+============================================================
+
+Dataset: 2154 sensor-stress pairs from 48 participants
+Stress level distribution: {1: np.int64(972), 2: np.int64(343), 3: np.int64(265), 4: np.int64(452), 5: np.int64(122)}
+
+Note: Stress scale 1=A little stressed, 2=Definitely stressed,
+      3=Stressed out, 4=Feeling good, 5=Feeling great
+
+────────────────────────────────────────────────────────────
+Correlation with Stress Level (Pearson r, two-tailed p-value):
+────────────────────────────────────────────────────────────
+  *** r=+0.0906  p=0.0000  Physical Activity
+  **  r=+0.0700  p=0.0012  Unknown Activity
+  *   r=+0.0551  p=0.0105  Ambient Noise
+  *   r=+0.0478  p=0.0264  Voice (Audio)
+      r=+0.0285  p=0.1860  Conversation
+      r=-0.0148  p=0.4915  Phone Dark Time
+      r=-0.0148  p=0.4919  Charging Time
+      r=+0.0242  p=0.2615  Screen Unlocks
+      r=+0.0210  p=0.3290  Screen Time
+  *   r=+0.0467  p=0.0303  WiFi Locations
+
+────────────────────────────────────────────────────────────
+Key Findings:
+────────────────────────────────────────────────────────────
+
+Strongest correlations:
+  • Physical Activity: r=+0.0906 (higher → less stressed)
+  • Unknown Activity: r=+0.0700 (higher → less stressed)
+  • Ambient Noise: r=+0.0551 (higher → less stressed)
+  • Voice (Audio): r=+0.0478 (higher → less stressed)
+  • WiFi Locations: r=+0.0467 (higher → less stressed)
+
+Behavioral Differences (Stressed vs Not Stressed):
+  Stressed periods: 1315 samples
+  Not stressed periods: 574 samples
+  • Physical Activity: stressed=2.3 vs calm=3.0 (-24%)
+  • Unknown Activity: stressed=1.0 vs calm=1.4 (-31%)
+  • Conversation: stressed=16.3 vs calm=17.6 (-8%)
+  • WiFi Locations: stressed=6.8 vs calm=7.5 (-9%)
+  • Phone Dark Time: stressed=29.6 vs calm=28.2 (+5%)
+
+Significance: *** p<0.001, ** p<0.01, * p<0.05
