@@ -1,0 +1,25 @@
+============================================================
+  Participant u59 — Complete Behavioral Profile
+============================================================
+
+📊 Data Coverage:
+   Sensor data: 2013-03-27 → 2013-06-05
+   Hourly records: 1681
+   Stress EMA responses: 263
+   Sleep EMA responses: 73
+   Social EMA responses: 79
+
+😰 Stress Profile:
+   Mean stress score: 3.62/5 (1=great, 5=stressed out)
+   Most common: A little stressed
+   Worst reported: A little stressed
+
+📱 Phone Behavior (Daily Averages):
+   Screen time: 15.0 min/hr
+   Active minutes: 4.4 min/hr
+   Dark time: 17.5 min/hr
+   Voice audio: 7.5 min/hr
+   WiFi APs: 8.2 unique/hr
+
+😴 Sleep:
+   Average self-reported: 5.7 hours/night
