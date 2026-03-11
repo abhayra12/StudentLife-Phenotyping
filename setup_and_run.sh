@@ -12,17 +12,21 @@
 # ├───────┼─────────────────┼───────────────────────────────────────────────────┤
 # │  1    │ --build         │ Build Docker containers (~3-5 min first time)     │
 # │  2    │ --start         │ Start MLflow tracking server (port 5000)          │
-# │  3    │ --pipeline      │ Run full ML pipeline (10 steps, ~30-45 min)       │
+# │  3    │ --pipeline      │ Run full ML pipeline (13 steps, ~30-45 min)       │
 # │  4    │ --api           │ Start FastAPI server (port 8000)                  │
 # │  5    │ --test          │ Test API with sample prediction & anomaly         │
 # └───────┴─────────────────┴───────────────────────────────────────────────────┘
 #
 # Pipeline Steps (executed by --pipeline):
-#   [1/10] Data Cleaning          [6/10] Gradient Boosting
-#   [2/10] Time Alignment         [7/10] LSTM Model
-#   [3/10] Final Dataset          [8/10] Transformer (Best)
-#   [4/10] Feature Verification   [9/10] Anomaly Detection
-#   [5/10] Baseline Models
+#   Phase 1 — Sensor Data          Phase 3 — Activity Models
+#   [1/13] Data Cleaning            [7/13] Baseline Models
+#   [2/13] Time Alignment            [8/13] Gradient Boosting
+#   [3/13] Final Dataset             [9/13] LSTM Model
+#   [4/13] Feature Verification     [10/13] Transformer
+#   Phase 2 — EMA Data              [11/13] Anomaly Detection
+#   [5/13] Parse EMA Self-Reports   Phase 4 — Stress Prediction
+#   [6/13] Merge Sensor ↔ EMA       [12/13] Stress Models (×10)
+#                                   [13/13] EMA Visualizations
 #
 # Quick Start (all-in-one):
 #   ./setup_and_run.sh           # Runs steps 1-3 automatically
@@ -153,9 +157,10 @@ run_pipeline() {
     print_step "This will:"
     echo "   1. Check/download dataset"
     echo "   2. Install dependencies (if needed)"
-    echo "   3. Run data cleaning & alignment"
-    echo "   4. Train all models (Baseline → Transformer)"
-    echo "   5. Run anomaly detection"
+    echo "   3. Run data cleaning & alignment (sensor + EMA)"
+    echo "   4. Train activity models (Baseline → Transformer)"
+    echo "   5. Train stress prediction (10 algorithms)"
+    echo "   6. Run anomaly detection & EMA visualizations"
     echo ""
     
     docker-compose --profile training run --rm training bash -c "./run_pipeline.sh"
@@ -322,7 +327,7 @@ show_help() {
     echo "├───────┼─────────────────┼───────────────────────────────────────────────────┤"
     echo "│  1    │ --build         │ Build Docker containers (~3-5 min first time)     │"
     echo "│  2    │ --start         │ Start MLflow tracking server (port 5000)          │"
-    echo "│  3    │ --pipeline      │ Run full ML pipeline (10 steps, ~30-45 min)       │"
+    echo "│  3    │ --pipeline      │ Run full ML pipeline (13 steps, ~30-45 min)       │"
     echo "│  4    │ --api           │ Start FastAPI server (port 8000)                  │"
     echo "│  5    │ --test          │ Test API with sample prediction & anomaly         │"
     echo "└───────┴─────────────────┴───────────────────────────────────────────────────┘"
@@ -332,7 +337,7 @@ show_help() {
     echo "Setup & Build:"
     echo "  --build        Build Docker containers"
     echo "  --start        Start MLflow tracking server"
-    echo "  --pipeline     Run the full 10-step ML pipeline"
+    echo "  --pipeline     Run the full 13-step ML pipeline (sensor + EMA)"
     echo ""
     echo "API & Testing:"
     echo "  --api          Start FastAPI prediction server (port 8000)"
@@ -355,12 +360,16 @@ show_help() {
     echo "  ./setup_and_run.sh --api"
     echo "  ./setup_and_run.sh --test"
     echo ""
-    echo "Pipeline Steps (10 total):"
-    echo "  [1/10] Data Cleaning          [6/10] Gradient Boosting"
-    echo "  [2/10] Time Alignment         [7/10] LSTM Model"
-    echo "  [3/10] Final Dataset          [8/10] Transformer (Best)"
-    echo "  [4/10] Feature Verification   [9/10] Anomaly Detection"
-    echo "  [5/10] Baseline Models"
+    echo "Pipeline Steps (13 total, 4 phases):"
+    echo "  Phase 1: Sensor Data           Phase 3: Activity Models"
+    echo "  [1/13] Data Cleaning            [7/13] Baselines"
+    echo "  [2/13] Time Alignment           [8/13] Gradient Boosting"
+    echo "  [3/13] Final Dataset            [9/13] LSTM"
+    echo "  [4/13] Feature Verification    [10/13] Transformer"
+    echo "  Phase 2: EMA Data              [11/13] Anomaly Detection"
+    echo "  [5/13] Parse EMA               Phase 4: Stress Prediction"
+    echo "  [6/13] Merge Sensor+EMA        [12/13] 10 ML Algorithms"
+    echo "                                 [13/13] EMA Visualizations"
     echo ""
 }
 
@@ -432,7 +441,7 @@ case "${1:-}" in
         echo "├───────┼─────────────────┼───────────────────────────────────────────────────┤"
         echo "│  1    │ --build         │ Build Docker containers                           │"
         echo "│  2    │ --start         │ Start MLflow (port 5000)                          │"
-        echo "│  3    │ --pipeline      │ Run 10-step ML pipeline                           │"
+        echo "│  3    │ --pipeline      │ Run 13-step ML pipeline (sensor + EMA)            │"
         echo "└───────┴─────────────────┴───────────────────────────────────────────────────┘"
         echo ""
         read -p "Continue with full setup? (y/n) " -n 1 -r
