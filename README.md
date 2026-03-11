@@ -65,7 +65,7 @@ The project trains **Random Forest** and **XGBoost** models to predict EMA stres
 
 - 🔄 **End-to-End ML Pipeline**: Automated data cleaning, EMA parsing, feature engineering, training, and evaluation
 - 📋 **EMA Ground Truth**: 2,289 self-reported stress responses from 48 students as prediction targets
-- 🌲 **Tree-Based Models**: Random Forest & XGBoost for stress classification and regression
+- 🤖 **10 ML Algorithms**: RF, XGBoost, LightGBM, Extra Trees, GBM, AdaBoost, SVM, KNN, MLP, Logistic Regression + unsupervised clustering
 - 🧠 **Deep Learning**: Transformer architecture with Multi-Head Attention for activity prediction
 - 🚨 **Anomaly Detection**: Autoencoder-based early warning system for behavioral breakdowns
 - 📊 **Comprehensive EDA**: 20+ publication-ready visualizations (stress, sleep, correlation, deep dives)
@@ -1161,8 +1161,8 @@ This project extends the original [StudentLife paper (Wang et al., 2014)](https:
 **Our Work**: End-to-end ML pipeline
 
 - **Reproducibility**: `uv` deterministic dependency management, script-first approach (not notebooks)  
-- **Automation**: `run_full_pipeline.ps1` orchestrates 10-step DAG  
-- **Deployment-Ready**: Docker containerization (planned), API design complete
+- **Automation**: `run_pipeline.sh` orchestrates 13-step pipeline (sensor + EMA)  
+- **Deployment-Ready**: Docker containerization, FastAPI prediction service
 
 ### 6. **Temporal Context Modeling**
 
@@ -1383,6 +1383,8 @@ StudentLife-Phenotyping/
 ├── pyproject.toml                 # Dependencies (uv-managed)
 ├── Dockerfile                     # Container definition
 ├── setup_and_run.sh               # One-command setup (--build, --pipeline, --test)
+├── run_pipeline.sh                # 13-step ML pipeline (sensor + EMA)
+├── PRESENTATION_GUIDE.md          # Slide-by-slide presentation guide
 │
 ├── data/
 │   ├── raw/
@@ -1401,6 +1403,7 @@ StudentLife-Phenotyping/
 │       └── test_stress.csv        # Test set (15%)
 │
 ├── models/
+│   ├── mlp_stress_classifier.pkl  # MLP Neural Net (best stress model)
 │   ├── rf_stress_classifier.pkl   # Random Forest (stress prediction)
 │   ├── xgb_stress_classifier.pkl  # XGBoost (stress prediction)
 │   ├── transformer_best.pth       # Transformer (activity prediction)
@@ -1424,25 +1427,25 @@ StudentLife-Phenotyping/
 │   │   │   ├── sensor_ema_correlation.py  # 🆕 Sensor ↔ stress correlation
 │   │   │   └── single_user_deep_dive.py   # 🆕 One participant's full story
 │   │   └── modeling/
-│   │       ├── stress_prediction.py       # 🆕 RF + XGBoost stress models
+│   │       ├── stress_prediction.py       # 🆕 10 algorithms + clustering
 │   │       ├── 09_transformer.py          # Transformer activity model
 │   │       └── 08_autoencoder.py          # Anomaly detection
 │   │
 │   └── features/                  # Feature engineering
 │
 ├── docs/
-│   ├── PRESENTATION_GUIDE.md     # 🆕 Slide-by-slide presentation guide
 │   ├── dataset_reference.md      # Full dataset schema
 │   └── PAPER_READING_GUIDE.md    # Research context
 │
 ├── reports/
 │   ├── figures/
+│   │   ├── modeling/             # 🆕 Model comparison & confusion matrix
 │   │   ├── ema/                  # 🆕 8 EMA visualizations
 │   │   ├── correlation/          # 🆕 4 sensor-stress correlation plots
 │   │   └── deep_dive/            # 🆕 Single-user behavioral profile
 │   └── results/
-│       ├── stress_prediction_results.csv    # 🆕 RF/XGBoost metrics
-│       ├── feature_importance_rf.csv        # 🆕 Feature rankings
+│       ├── stress_prediction_results.csv    # 🆕 All model metrics
+│       ├── feature_importance_best.csv      # 🆕 Feature rankings
 │       └── sensor_ema_correlation_report.txt # 🆕 Statistical analysis
 │
 └── tests/                         # Unit tests
@@ -1454,25 +1457,43 @@ StudentLife-Phenotyping/
 
 ### Stress Prediction (Primary Task: Sensor → EMA Stress Level)
 
-**Task:** Predict self-reported stress level (1-5) from 62 passive sensor features
+**Task:** Predict self-reported stress level (1-5) from 62 passive sensor features  
+**Algorithms:** 10 supervised + unsupervised clustering  
+**Best Model:** MLP Neural Network (41.2% accuracy, 2× better than random)
 
 | Model | Accuracy | F1 (weighted) | F1 (macro) | vs Random |
 |:------|:---------|:--------------|:-----------|:----------|
 | Random guess | 20.0% | — | — | 1.0× |
-| Majority class | 45.1% | — | — | 2.3× |
-| **Random Forest** | **39.7%** | **0.324** | **0.208** | **2.0×** |
-| **XGBoost** | **38.8%** | **0.331** | **0.221** | **1.9×** |
+| **MLP Neural Network** | **41.2%** | **0.256** | **0.118** | **2.1×** |
+| Random Forest | 39.7% | 0.324 | 0.208 | 2.0× |
+| Extra Trees | 39.7% | 0.317 | 0.201 | 2.0× |
+| XGBoost | 38.8% | 0.331 | 0.221 | 1.9× |
+| AdaBoost | 38.6% | 0.290 | 0.177 | 1.9× |
+| KNN | 38.3% | 0.287 | 0.180 | 1.9× |
+| LightGBM | 38.0% | 0.337 | 0.232 | 1.9× |
+| Gradient Boosting | 37.7% | 0.314 | 0.200 | 1.9× |
+| SVM | 33.0% | 0.329 | 0.261 | 1.7× |
+| Logistic Regression | 20.0% | 0.216 | 0.189 | 1.0× |
 
 **Regression (Stress Score 1-5):**
 
 | Model | MAE | RMSE | R² |
 |:------|:----|:-----|:---|
-| **Random Forest** | 1.225 | 1.392 | -0.079 |
-| **XGBoost** | 1.245 | 1.466 | -0.198 |
+| Logistic Reg / Ridge | 1.175 | 1.344 | -0.006 |
+| KNN | 1.206 | 1.369 | -0.043 |
+| Random Forest | 1.225 | 1.392 | -0.079 |
+| AdaBoost | 1.238 | 1.357 | -0.025 |
 
-**Cross-Validation (5-fold):**
-- Random Forest: 41.5% ± 1.7%
-- XGBoost: 36.5% ± 2.0%
+**Unsupervised Clustering:**
+
+| Method | Silhouette | Mapped Accuracy |
+|:-------|:-----------|:----------------|
+| K-Means (k=3) | 0.154 | 43.5% |
+| K-Means (k=5) | 0.122 | 43.5% |
+| GMM (k=3) | 0.087 | 43.5% |
+| DBSCAN (eps=3.0) | 0.506 | N/A |
+
+**Cross-Validation (5-fold):** MLP: 43.3% ± 2.2%
 
 **Top Sensor Features for Stress Prediction:**
 
@@ -1831,7 +1852,7 @@ Consult `ISSUES_LOG.md` for historical issue resolutions.
 - [x] EMA exploratory data analysis (8 visualizations)
 - [x] Sensor-stress correlation analysis (statistical validation)
 - [x] Single-user behavioral deep dive
-- [x] Tree-based stress prediction (RF + XGBoost)
+- [x] Stress prediction (10 supervised + unsupervised clustering)
 - [x] Deep learning models (LSTM, Transformer for activity)
 - [x] Anomaly detection (Autoencoder)
 - [x] REST API (FastAPI) with documentation
@@ -1851,7 +1872,7 @@ Consult `ISSUES_LOG.md` for historical issue resolutions.
 
 ## 🎬 Presentation Guide
 
-For a complete slide-by-slide guide to presenting this project, see **[docs/PRESENTATION_GUIDE.md](docs/PRESENTATION_GUIDE.md)**.
+For a complete slide-by-slide guide to presenting this project, see **[PRESENTATION_GUIDE.md](PRESENTATION_GUIDE.md)**.
 
 The guide includes:
 - 14 slides with speaker notes
