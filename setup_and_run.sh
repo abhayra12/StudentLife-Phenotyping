@@ -12,21 +12,22 @@
 # ├───────┼─────────────────┼───────────────────────────────────────────────────┤
 # │  1    │ --build         │ Build Docker containers (~3-5 min first time)     │
 # │  2    │ --start         │ Start MLflow tracking server (port 5000)          │
-# │  3    │ --pipeline      │ Run full ML pipeline (13 steps, ~30-45 min)       │
+# │  3    │ --pipeline      │ Run full ML pipeline (14 steps, ~35-50 min)       │
 # │  4    │ --api           │ Start FastAPI server (port 8000)                  │
 # │  5    │ --test          │ Test API with sample prediction & anomaly         │
 # └───────┴─────────────────┴───────────────────────────────────────────────────┘
 #
 # Pipeline Steps (executed by --pipeline):
 #   Phase 1 — Sensor Data          Phase 3 — Activity Models
-#   [1/13] Data Cleaning            [7/13] Baseline Models
-#   [2/13] Time Alignment            [8/13] Gradient Boosting
-#   [3/13] Final Dataset             [9/13] LSTM Model
-#   [4/13] Feature Verification     [10/13] Transformer
-#   Phase 2 — EMA Data              [11/13] Anomaly Detection
-#   [5/13] Parse EMA Self-Reports   Phase 4 — Stress Prediction
-#   [6/13] Merge Sensor ↔ EMA       [12/13] Stress Models (×10)
-#                                   [13/13] EMA Visualizations
+#   [1/14] Data Cleaning            [7/14] Baseline Models
+#   [2/14] Time Alignment           [8/14] Gradient Boosting
+#   [3/14] Final Dataset            [9/14] LSTM Model
+#   [4/14] Feature Verification    [10/14] Transformer (SOTA)
+#   Phase 2 — EMA Data             [11/14] Anomaly Detection
+#   [5/14] Parse EMA Self-Reports  Phase 4 — Stress Prediction
+#   [6/14] Merge Sensor ↔ EMA      [12/14] Stress Models (×10)
+#                                  [13/14] SOTA (CatBoost HPO + Ensemble + SHAP)
+#                                  [14/14] EMA Visualizations
 #
 # Quick Start (all-in-one):
 #   ./setup_and_run.sh           # Runs steps 1-3 automatically
@@ -327,7 +328,7 @@ show_help() {
     echo "├───────┼─────────────────┼───────────────────────────────────────────────────┤"
     echo "│  1    │ --build         │ Build Docker containers (~3-5 min first time)     │"
     echo "│  2    │ --start         │ Start MLflow tracking server (port 5000)          │"
-    echo "│  3    │ --pipeline      │ Run full ML pipeline (13 steps, ~30-45 min)       │"
+    echo "│  3    │ --pipeline      │ Run full ML pipeline (14 steps, ~35-50 min)       │"
     echo "│  4    │ --api           │ Start FastAPI server (port 8000)                  │"
     echo "│  5    │ --test          │ Test API with sample prediction & anomaly         │"
     echo "└───────┴─────────────────┴───────────────────────────────────────────────────┘"
@@ -337,7 +338,7 @@ show_help() {
     echo "Setup & Build:"
     echo "  --build        Build Docker containers"
     echo "  --start        Start MLflow tracking server"
-    echo "  --pipeline     Run the full 13-step ML pipeline (sensor + EMA)"
+    echo "  --pipeline     Run the full 14-step ML pipeline (sensor + EMA + SOTA)"
     echo ""
     echo "API & Testing:"
     echo "  --api          Start FastAPI prediction server (port 8000)"
@@ -360,16 +361,17 @@ show_help() {
     echo "  ./setup_and_run.sh --api"
     echo "  ./setup_and_run.sh --test"
     echo ""
-    echo "Pipeline Steps (13 total, 4 phases):"
+    echo "Pipeline Steps (14 total, 4 phases):"
     echo "  Phase 1: Sensor Data           Phase 3: Activity Models"
-    echo "  [1/13] Data Cleaning            [7/13] Baselines"
-    echo "  [2/13] Time Alignment           [8/13] Gradient Boosting"
-    echo "  [3/13] Final Dataset            [9/13] LSTM"
-    echo "  [4/13] Feature Verification    [10/13] Transformer"
-    echo "  Phase 2: EMA Data              [11/13] Anomaly Detection"
-    echo "  [5/13] Parse EMA               Phase 4: Stress Prediction"
-    echo "  [6/13] Merge Sensor+EMA        [12/13] 10 ML Algorithms"
-    echo "                                 [13/13] EMA Visualizations"
+    echo "  [1/14] Data Cleaning            [7/14] Baselines"
+    echo "  [2/14] Time Alignment           [8/14] Gradient Boosting"
+    echo "  [3/14] Final Dataset            [9/14] LSTM"
+    echo "  [4/14] Feature Verification    [10/14] Transformer"
+    echo "  Phase 2: EMA Data              [11/14] Anomaly Detection"
+    echo "  [5/14] Parse EMA               Phase 4: Stress Prediction"
+    echo "  [6/14] Merge Sensor+EMA        [12/14] 10 ML Algorithms"
+    echo "                                 [13/14] SOTA (CatBoost HPO+Ensemble+SHAP)"
+    echo "                                 [14/14] EMA Visualizations"
     echo ""
 }
 
@@ -441,7 +443,7 @@ case "${1:-}" in
         echo "├───────┼─────────────────┼───────────────────────────────────────────────────┤"
         echo "│  1    │ --build         │ Build Docker containers                           │"
         echo "│  2    │ --start         │ Start MLflow (port 5000)                          │"
-        echo "│  3    │ --pipeline      │ Run 13-step ML pipeline (sensor + EMA)            │"
+        echo "│  3    │ --pipeline      │ Run 14-step ML pipeline (sensor + EMA + SOTA)     │"
         echo "└───────┴─────────────────┴───────────────────────────────────────────────────┘"
         echo ""
         read -p "Continue with full setup? (y/n) " -n 1 -r

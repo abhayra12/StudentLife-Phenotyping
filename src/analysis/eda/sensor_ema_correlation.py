@@ -338,6 +338,8 @@ def main():
     print(f"   Features: {len(df.columns)} columns")
 
     # Add engineered features for correlation analysis
+    import sys, os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
     from src.analysis.modeling.stress_prediction import engineer_features
     df = engineer_features(df)
 

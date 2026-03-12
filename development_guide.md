@@ -1,170 +1,220 @@
-# 📖 StudentLife Phenotyping - Developer Manual
+# Developer Guide — StudentLife Stress Phenotyping
 
-**Purpose**: This guide provides the technical standards, workflows, and architecture for the StudentLife Phenotyping project. It is the primary reference for developers contributing to the codebase.
+> This is the primary technical reference for contributors. It covers architecture decisions, coding standards, testing, and extension patterns.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start (Local, No Docker)
 
-### 1. Environment Setup
 ```bash
-# Clone and enter
+# Prerequisites: Python 3.9+, pip
 git clone https://github.com/abhayra12/StudentLife-Phenotyping.git
 cd StudentLife-Phenotyping
 
-# Install dependencies (using uv for speed)
-pip install uv
-python -m uv venv
-.venv\Scripts\activate
-python -m uv pip install -r requirements.txt
+# Install all dependencies
+pip3 install scikit-learn xgboost lightgbm catboost optuna shap torch \
+             pandas numpy matplotlib seaborn pyarrow mlflow fastapi uvicorn
+
+# Run the full 14-step pipeline
+bash run_pipeline.sh
 ```
 
-### 2. Run Data Pipeline
-To process raw data into the final train/test split:
-
-```bash
-# Step 1: Clean raw sensor data
-python src/data/run_cleaning.py
-
-# Step 2: Align sensors to hourly grid
-python src/data/run_alignment.py
-
-# Step 3: Create final Parquet datasets
-python src/data/create_final_dataset.py
-```
-
-**Output**: `data/processed/train.parquet`, `val.parquet`, `test.parquet`
+For Docker-based setup, see [SETUP_GUIDE.md](SETUP_GUIDE.md).
 
 ---
 
-## 🏗️ Project Architecture
+## Architecture
 
 ### Data Flow
-1.  **Raw Data** (`data/raw/dataset/sensing/`):
-    - Original CSV files from 10 sensors (activity, audio, gps, etc.).
-    - *Read-only*.
 
-2.  **Cleaning** (`src/data/cleaning.py`):
-    - Validates timestamps and values.
-    - Removes outliers.
-    - Output: `data/processed/cleaned/` (CSV).
+```
+data/raw/dataset/sensing/          ← Read-only input
+         ↓ [Step 1] src/data/run_cleaning.py
+data/processed/cleaned/            ← Per-sensor cleaned CSVs
+         ↓ [Step 2] src/data/run_alignment.py
+data/processed/aligned/            ← Hourly-grid aligned CSVs (49 participants)
+         ↓ [Step 3] src/data/create_final_dataset.py
+data/processed/
+  sensor_ema_merged.csv            ← 2,154 labeled samples (54 features + label)
+  train_stress.csv / val / test    ← Chronological 70/15/15 split
+  train.parquet / val / test       ← Hourly grid (for LSTM/Transformer)
+         ↓ [Steps 4–13] src/analysis/
+reports/results/                   ← JSON/CSV metric outputs
+reports/figures/                   ← PNG visualizations
+models/                            ← Serialized model artifacts
+```
 
-3.  **Alignment** (`src/data/alignment.py`):
-    - Resamples all sensors to a common **hourly grid**.
-    - Aggregates high-frequency data (e.g., audio features averaged per hour).
-    - Output: `data/processed/aligned/` (CSV).
+### Module Map
 
-4.  **Final Dataset** (`src/data/create_final_dataset.py`):
-    - Stacks all participants.
-    - Adds temporal features (week of term, day of week).
-    - Splits chronologically:
-        - **Train**: Weeks 1-6
-        - **Val**: Weeks 7-8
-        - **Test**: Weeks 9-10
-    - Output: `data/processed/*.parquet`.
-
----
-
-## 🛠️ Development Workflow
-
-### Adding a New Feature
-1.  **Create Branch**: `git checkout -b feat/feature-name`
-2.  **Implement**: Write code in `src/`.
-3.  **Test**: Add unit tests in `tests/` and run `pytest`.
-4.  **Verify**: Run the pipeline to ensure no regressions.
-5.  **Commit**: `git commit -m "feat: description"`
-
-### Adding a New Sensor
-1.  Update `src/data/cleaning.py`: Add validation logic.
-2.  Update `src/data/alignment.py`: Add aggregation logic (e.g., sum vs mean).
-3.  Run `run_alignment.py` to regenerate aligned data.
+| Directory | Purpose |
+|---|---|
+| `src/data/` | ETL: cleaning, alignment, dataset assembly |
+| `src/features/` | Feature extractors: activity/sleep, location, temporal |
+| `src/analysis/eda/` | Exploratory analysis scripts |
+| `src/analysis/modeling/` | All model training scripts (numbered 01–SOTA) |
+| `src/api/` | FastAPI prediction service |
+| `tests/` | pytest unit tests for data pipeline |
+| `scripts/` | Utility scripts |
 
 ---
 
-## 📏 Coding Standards
+## Development Workflow
 
-### 1. Relative Paths ONLY
-> [!IMPORTANT]
-> **NEVER use absolute paths** (e.g., `C:\Users\...`).
-> Always use `pathlib` relative to the project root.
+### Adding a Feature or Model
 
-**Correct**:
+1. **Branch**: `git checkout -b feat/short-description`
+2. **Implement**: Code goes in `src/`. Scripts over notebooks (see below).
+3. **Test locally**: `python3 src/analysis/modeling/your_script.py`
+4. **Unit tests**: Add to `tests/` if adding data pipeline logic
+5. **Run full pipeline**: `bash run_pipeline.sh` — confirms no regressions
+6. **Commit**: Use conventional commits (`feat:`, `fix:`, `refactor:`, `docs:`)
+
+### Adding a New Sensor Modality
+
+1. `src/data/cleaning.py` — add validation and outlier handling for new sensor
+2. `src/data/alignment.py` — add aggregation logic (e.g., `sum` for event counts, `mean` for continuous signals)
+3. `src/data/create_final_dataset.py` — include new aggregated columns in feature matrix
+4. Update feature count in `README.md` and `PRESENTATION_GUIDE.md`
+5. Re-run steps 1–3 to regenerate all derived datasets
+
+### Adding a New Model
+
+1. Create `src/analysis/modeling/NN_model_name.py` (follow numbering)
+2. Add step to `run_pipeline.sh` with correct `[N/14]` label
+3. Outputs: write metrics JSON to `reports/results/`, figures to `reports/figures/modeling/`
+4. Update step count in `setup_and_run.sh` header and `SETUP_GUIDE.md` pipeline table
+
+---
+
+## Coding Standards
+
+### Paths — Always Use `pathlib`, Always Relative
+
 ```python
+# ✅ Correct
 from pathlib import Path
 DATA_DIR = Path('data/processed')
+output_path = DATA_DIR / 'results.csv'
+
+# ❌ Wrong — breaks Docker, Windows, and any other developer's machine
+DATA_DIR = '/home/user/project/data'
 ```
 
-**Incorrect**:
+All scripts must run correctly from the project root: `python3 src/analysis/modeling/01_regression_baselines.py`
+
+### Python Version
+
+Use `python3` for all invocations. The project requires Python 3.9+. The system Python at `/usr/bin/python3` is the supported runtime. The `uv` venv (Python 3.14) is for Docker only and does not support CatBoost 1.2.8.
+
+### Scripts Over Notebooks
+
+All analysis is in `src/analysis/` Python scripts for reproducibility and git-diff readability. Notebooks are permitted only in `notebooks/` for exploratory scratch work — never import from them.
+
+### Type Hints & Docstrings
+
 ```python
-DATA_DIR = 'C:/Users/abhay/project/data'
+def make_features(df: pd.DataFrame, window_hours: int = 6) -> pd.DataFrame:
+    """
+    Compute feature vector for each EMA response.
+
+    Args:
+        df: Aligned sensor DataFrame with timestamp index.
+        window_hours: Lookback window before each EMA response.
+
+    Returns:
+        Feature DataFrame with one row per EMA response.
+    """
 ```
 
-### 2. Python Style
-- **Type Hints**: Encouraged for function signatures.
-- **Docstrings**: Required for all modules and major functions.
-- **Imports**: Group standard lib, third-party, and local imports.
+### Metrics Standard
 
-### 3. Scripts over Notebooks
-> [!IMPORTANT]
-> We use **Python scripts** (`src/analysis/`) for all analysis and modeling to ensure reproducibility and better git integration.
-> 
-> - **EDA**: `src/analysis/eda/*.py`
-> - **Features**: `src/analysis/features/*.py`
-> - **Modeling**: `src/analysis/modeling/*.py`
-> 
-> Run them directly: `python src/analysis/modeling/01_regression_baselines.py`
+- **Primary**: Macro F1 (stress classification tasks)
+- **Secondary**: Accuracy, AUC
+- **Regression auxiliary tasks**: MAE (stress is a 1–5 ordinal scale, not continuous)
+- Never report accuracy alone on imbalanced datasets without majority-class baseline comparison
 
----
+### Randomness & Reproducibility
 
-## 🐛 Troubleshooting
-See [ISSUES_LOG.md](ISSUES_LOG.md) for a history of common issues and solutions.
+```python
+SEED = 42
+np.random.seed(SEED)
+# Pass random_state=SEED to all sklearn estimators
+# Pass seed=SEED to CatBoost, XGBoost, LightGBM
+```
 
 ---
 
-## 📜 Project History & Timeline
+## Testing
 
-### Phase 7: Deep Learning (Completed - Jan 2026)
-- **Task 7.2**: Transformers.
-  - Implemented Self-Attention model. MAE ~1.18 (Matched LSTM).
-  - Validated deep learning consistency.
-- **Task 7.1**: Autoencoders (Unsupervised).
-  - Learned compressed latent space (3 dimensions).
-  - Enabled Anomaly Detection (Reconstruction Error).
+```bash
+# Run all unit tests
+python3 -m pytest tests/ -v
 
-### Phase 6: Advanced Machine Learning (Completed - Jan 2026)
-- **Task 6.4**: LSTM Timeseries.
-  - MAE: ~1.18 (Significantly beat XGBoost 1.66).
-  - Validated that sequence models are superior for this dataset.
-- **Task 6.3**: Boosting Comparison (LightGBM/CatBoost).
-  - Metrics comparable to XGBoost (~0.75 AUC).
-- **Task 6.2**: SHAP Analysis.
-  - Identified `audio_voice_minutes` (social context) as top driver.
-- **Task 6.1**: Gradient Boosting (XGBoost).
-  - Regression MAE: 1.66. Classification AUC: 0.75.
+# Run a specific test file
+python3 -m pytest tests/test_alignment.py -v
 
-### Phase 5: Predictive Modeling (Completed - Jan 2026)
-- **Task 5.3**: Classification Baselines (Logistic Regression vs Random Forest).
-  - Best AUC: 0.75 (Random Forest).
-- **Task 5.2**: Evaluation Metrics Deep Dive.
-  - Insight: Classification (AUC 0.76) works better than Regression.
-- **Task 5.1**: Implemented Regression Baselines (Linear, Ridge).
-  - Achieved R²=0.11 (Ridge) vs Baseline R²=-0.005.
+# Run with coverage
+python3 -m pytest tests/ --cov=src --cov-report=term-missing
+```
+
+Tests cover:
+- `test_alignment.py` — sensor window extraction, temporal leakage prevention
+- `test_cleaning.py` — outlier removal, timestamp validation
+
+When adding new data pipeline steps, add corresponding tests.
+
+---
+
+## Common Issues
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `PermissionError` writing to `reports/` | Root-owned files from Docker run | `sudo chmod -R 666 reports/ models/` |
+| `ModuleNotFoundError: catboost` | Running in uv venv (Python 3.14) | Use system `python3` — `which python3` should show `/usr/bin/python3` |
+| `ModuleNotFoundError: torch` | Not installed on system Python | `pip3 install torch --index-url https://download.pytorch.org/whl/cpu` |
+| LSTM/Transformer underperform gradient boosting | Expected behavior — see PRESENTATION_GUIDE.md | Not a bug |
+| `uv sync` triggered during pipeline | `python` not on PATH (only `python3`) | Ensure `run_pipeline.sh` uses `python3` throughout |
+| Missing `pyarrow` for `.parquet` | Not in base install | `pip3 install pyarrow` |
+
+---
+
+## Project History
+
+### Current: SOTA Phase (this session)
+- CatBoost + Optuna HPO (60-trial Bayesian search, MedianPruner)
+- Two-level OOF stacking: RF + ET + XGB + LGB + CatBoost → Logistic Regression meta-learner
+- SHAP TreeExplainer for multi-class feature attribution
+- Pipeline extended from 13 → 14 steps
+- README, SETUP_GUIDE, PRESENTATION_GUIDE rewritten to MAANG-grade technical quality
+
+### Phase 7: Deep Learning (Jan 2026)
+- LSTM (bidirectional, hidden=128): MAE ~1.18 on regression task
+- Transformer (4-head, d_model=64): MAE ~1.18 (matched LSTM)
+- Key finding: both underperform gradient boosting on aggregated features
+
+### Phase 6: Advanced ML (Jan 2026)
+- XGBoost regression: MAE 1.66, AUC 0.75
+- LightGBM / CatBoost comparison
+- SHAP analysis: `audio_voice_minutes` identified as top driver
+- Autoencoder anomaly detection: 47 anomalous samples flagged
+
+### Phase 5: Baseline Modeling (Jan 2026)
+- Regression baselines: Ridge R²=0.11
+- Classification baselines: Random Forest AUC 0.75
+- Key insight: classification framing outperforms regression
 
 ### Phase 4: Feature Engineering (Jan 2026)
-- **Task 4.3**: Location & Mobility Features (DBSCAN clusters).
-- **Task 4.2**: Activity & Sleep Features (heuristics).
-- **Task 4.1**: Temporal Features (cyclical encoding).
-- **Refactor**: Converted all notebooks to `src/analysis/` scripts.
+- Location features: DBSCAN mobility clusters
+- Activity/sleep features: step count heuristics
+- Temporal features: cyclical sin/cos encoding
+- All notebooks converted to `src/analysis/` scripts
 
-
-### Phase 2: Data Acquisition & EDA (Jan 2026)
-- **Task 2.4**: Validated term lifecycle trends.
-- **Task 2.3**: Analyzed participant quality and defined tiers.
-- **Task 2.2**: Performed deep dive EDA on sensors.
-- **Task 2.1**: Extracted sensing data and created manifest.
-- **Decision**: Pivoted to **Sensing-Only** scope (passive data only).
+### Phase 2–3: Data Acquisition & EDA (Jan 2026)
+- StudentLife dataset downloaded and extracted (48 participants, 10 sensors)
+- Participant quality tiers defined (A/B/C by data completeness)
+- Pivoted to sensing-only scope (no social media, academic records)
 
 ### Phase 1: Setup (Jan 2026)
-- Initialized project structure.
-- Configured `uv` and `pyproject.toml`.
-- Created initial documentation.
+- Project scaffolded with `pyproject.toml`, `uv` config
+- Docker multi-stage build: training image + API image
+- CI pipeline: pytest on push
