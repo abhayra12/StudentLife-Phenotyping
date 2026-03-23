@@ -94,6 +94,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+chat.json
+
 
 pipeline_logs.txt
 
