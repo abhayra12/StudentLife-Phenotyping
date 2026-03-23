@@ -1,4 +1,34 @@
-# Presentation Guide — StudentLife Stress Phenotyping
+# Presentation Guide
+
+## 📊 System Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant API
+    participant MLflow
+    participant Model
+    User->>API: Send Sensor Data
+    API->>Model: Request Prediction
+    Model-->>API: Stress Level (0=Low, 5=High)
+    API-->>User: JSON Response
+```
+
+
+## 📊 System Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant API
+    participant MLflow
+    participant Model
+    User->>API: Send Sensor Data
+    API->>Model: Request Prediction
+    Model-->>API: Stress Level (0=Low, 5=High)
+    API-->>User: JSON Response
+```
+ — StudentLife Stress Phenotyping
 
 > **Audience:** ML engineers, data scientists, technical hiring panels, research audiences
 > **Duration:** 20–30 minutes + 10-minute Q&A

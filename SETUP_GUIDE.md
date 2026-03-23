@@ -16,7 +16,16 @@ df -h .                 # Needs 20GB+ free space
 
 ---
 
-## Quick Start (3 Steps)
+## 🚀 Quick Start (1 Command)
+
+We have provided a fully automated setup and execution script:
+
+```bash
+./setup_and_run.sh
+```
+
+This automatically builds containers, starts MLflow, runs the 14-step pipeline, starts the API, and runs tests. For detailed manual steps, see below.
+
 
 ### Step 1: Environment Setup (~1 min)
 
