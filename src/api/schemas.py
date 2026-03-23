@@ -123,6 +123,8 @@ class PredictionResponse(BaseModel):
     predicted_activity_minutes: float = Field(
         description="Predicted physical activity minutes for next 24 hours"
     )
+    activity_score: int = Field(default=0, description="Easy to understand score from 0-100")
+    status_indicator: str = Field(default="gray", description="Color indicator for UI: green, yellow, or red")
     interpretation: str = Field(
         description="Human-readable interpretation of the prediction"
     )
@@ -209,6 +211,8 @@ class AnomalyResponse(BaseModel):
     threshold: float = Field(
         description="Threshold used for anomaly detection"
     )
+    anomaly_score: int = Field(default=0, description="Score from 0-100 where >50 is anomalous")
+    status_indicator: str = Field(default="gray", description="Color indicator for UI: green, yellow, or red")
     interpretation: str = Field(
         description="Human-readable interpretation of the result"
     )

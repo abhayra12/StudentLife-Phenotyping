@@ -42,32 +42,44 @@ thresholds = {}
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-def get_activity_interpretation(minutes: float) -> str:
-    """Convert predicted activity minutes to human-readable interpretation."""
+def get_activity_interpretation(minutes: float) -> tuple[str, str, int]:
+    """Convert predicted activity minutes to human-readable interpretation, score, and status color."""
+    # Assuming minutes is typically 0-60
+    score = min(100, max(0, int((minutes / 60.0) * 100)))
+    
     if minutes < 20:
-        return "Very low activity - potential concern"
+        return "Very low activity - potential concern", "red", score
     elif minutes < 35:
-        return "Below average activity"
+        return "Below average activity", "yellow", score
     elif minutes < 55:
-        return "Normal activity level"
+        return "Normal activity level", "green", score
     elif minutes < 70:
-        return "Above average activity"
+        return "Above average activity", "green", score
     else:
-        return "Very high activity"
+        return "Very high activity", "yellow", score
 
 
-def get_anomaly_interpretation(error: float, threshold: float) -> tuple[str, str]:
-    """Convert anomaly score to interpretation and recommendation."""
+def get_anomaly_interpretation(error: float, threshold: float) -> tuple[str, str, str, int]:
+    """Convert anomaly score to interpretation, recommendation, status color, and anomaly score."""
+    # Calculate a 0-100 score where threshold = 50
+    # Formula: map [0, threshold] -> [0, 50], and [threshold, threshold*2] -> [50, 100]
+    if error < threshold:
+        score_val = (error / threshold) * 50
+    else:
+        score_val = 50 + ((error - threshold) / threshold) * 50
+    
+    anomaly_score = min(100, max(0, int(score_val)))
+    
     if error < 0.5:
-        return "Normal behavior pattern", None
+        return "Normal behavior pattern", None, "green", anomaly_score
     elif error < threshold:
-        return "Mild behavioral variation (within normal range)", None
+        return "Mild behavioral variation (within normal range)", None, "green", anomaly_score
     elif error < 1.5:
-        return "Moderate behavioral deviation detected", "Monitor for 2-3 days"
+        return "Moderate behavioral deviation detected", "Monitor for 2-3 days", "yellow", anomaly_score
     elif error < 2.5:
-        return "Significant behavioral deviation detected", "Consider wellness check-in"
+        return "Significant behavioral deviation detected", "Consider wellness check-in", "red", anomaly_score
     else:
-        return "Major behavioral anomaly detected", "Recommend immediate attention"
+        return "Major behavioral anomaly detected", "Recommend immediate attention", "red", anomaly_score
 
 
 @asynccontextmanager
@@ -355,12 +367,14 @@ async def predict_activity(
             else:
                 pred_value = pred.item()
         
-        interpretation = get_activity_interpretation(pred_value)
+        interpretation, status_indicator, activity_score = get_activity_interpretation(pred_value)
         
         return PredictionResponse(
             participant_id=data.participant_id,
             predicted_activity_minutes=round(pred_value, 2),
             interpretation=interpretation,
+            activity_score=activity_score,
+            status_indicator=status_indicator,
             confidence=None  # Could add uncertainty quantification here
         )
         
@@ -446,13 +460,15 @@ async def detect_anomaly(
         )
         
         is_anomaly = error > threshold
-        interpretation, recommendation = get_anomaly_interpretation(error, threshold)
+        interpretation, recommendation, status_indicator, anomaly_score = get_anomaly_interpretation(error, threshold)
         
         return AnomalyResponse(
             is_anomaly=is_anomaly,
             reconstruction_error=round(error, 4),
             threshold=round(threshold, 4),
             interpretation=interpretation,
+            anomaly_score=anomaly_score,
+            status_indicator=status_indicator,
             recommendation=recommendation
         )
         
