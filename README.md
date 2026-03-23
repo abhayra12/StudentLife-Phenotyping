@@ -95,6 +95,34 @@ Evaluation: **chronological holdout** (last 15% of the study timeline). This is 
 
 ## Pipeline
 
+
+### 🔄 Pipeline Walkthrough
+
+The fully automated pipeline (`setup_and_run.sh --pipeline`) executes the following scripts in order:
+
+**Phase 1: Sensor Data Processing**
+1. `src/data/01_clean_data.py` - Cleans raw CSVs, handles missing values, normalizes sensor streams.
+2. `src/data/02_align_time.py` - Aligns asynchronous sensor readings into continuous hourly bins.
+3. `src/data/03_build_dataset.py` - Merges disparate sensor streams into a master behavioral dataset.
+4. `src/features/04_verify_features.py` - Data quality checks and statistical verification.
+
+**Phase 2: EMA (Ecological Momentary Assessment)**
+5. `src/data/05_parse_ema.py` - Extracts psychological self-reports (Stress, Mood, Sleep from students).
+6. `src/data/06_merge_ema.py` - Links subjective EMA logs with objective sensor readings (target dataset).
+
+**Phase 3: Activity Modeling (Unsupervised/Weakly Supervised)**
+7. `src/analysis/modeling/07_baselines.py` - Classical ML modeling for physical activity baselines.
+8. `src/analysis/modeling/08_autoencoder.py` - Behavioral anomaly detection via Deep Autoencoders.
+9. `src/analysis/modeling/09_transformer.py` - SOTA sequence modeling (Transformers) on multivariate timeseries.
+10. `src/analysis/modeling/11_anomaly_detection.py` - Isolating behavioral shifts and critical deviations.
+
+**Phase 4: Stress Prediction (Supervised)**
+11. `src/analysis/modeling/12_stress_models.py` - Trains an array (x10) of predictive models mapping behavior to stress.
+12. `src/analysis/modeling/13_sota_stress.py` - Hyperparameter Optimization (Optuna) with CatBoost + Ensembling.
+13. `src/analysis/modeling/14_ema_visualizations.py` - Generates presentation-ready outcome plots in `reports/figures/`.
+
+
+
 14 steps across 4 phases. Each step is an independent Python script — runnable in isolation for debugging.
 
 ```
