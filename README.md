@@ -93,6 +93,27 @@ Evaluation: **chronological holdout** (last 15% of the study timeline). This is 
 
 ---
 
+
+## 🧠 ML Output Interpretations (Non-Technical Guide)
+
+Our models convert raw sensor numbers into human-readable insights. Here is exactly what the exported values mean:
+
+### 1. Stress Prediction Scale (1-5)
+Instead of arbitrary scores, the target variables are mapped to intuitive psychological states (inverted from the original dataset to make higher = worse):
+* **Score 1:** 🟢 Feeling great
+* **Score 2:** 🟢 Feeling good
+* **Score 3:** 🟡 A little stressed
+* **Score 4:** 🟠 Definitely stressed
+* **Score 5:** 🔴 Stressed out (High Risk)
+
+### 2. Activity / Anomaly Scoring via API
+The API endpoints return actionable scores from **0 to 100**, alongside UI color indicators:
+* **Activity Score (0-100):** Represents overall behavioral movement. `< 20` triggers a "red" *Very low activity - potential concern* warning, while `35-70` sits in the "green" *Normal activity* zone.
+* **Anomaly Score (0-100):** Represents how intensely current behavior deviates from the student's personal baseline. 
+    * `Score < 50` 🟢 Normal or mild variation.
+    * `Score 50-80` 🟡 Moderate deviation (Recommendation: Monitor for 2-3 days).
+    * `Score > 80` 🔴 Significant/Major anomaly (Recommendation: Consider wellness check-in).
+
 ## Pipeline
 
 
