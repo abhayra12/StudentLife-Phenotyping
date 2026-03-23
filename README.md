@@ -33,20 +33,6 @@ graph TD
 ```
 
 
-### 🏗️ Architecture
-
-```mermaid
-graph TD
-    A[Raw Sensor Data] --> B{Data Cleaning & Alignment}
-    C[EMA Self-Reports] --> B
-    B --> D[Feature Engineering]
-    D --> E[Model Training & Tuning]
-    E --> F[Ensemble & Evaluation]
-    F --> G[FastAPI Service]
-    G --> H[End User]
-```
-
-
 > **Can a smartphone detect student stress without ever asking?**
 
 This system trains on the [StudentLife dataset](https://studentlife.cs.dartmouth.edu/) — 48 students, 10 weeks, 5 passive sensor modalities — and predicts EMA (Ecological Momentary Assessment) self-reported stress levels from accelerometer, audio, screen usage, WiFi, and phone-lock patterns collected entirely in the background.
